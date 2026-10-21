@@ -4,23 +4,23 @@
 // canvas, archivos y puntero, así que no tiene sentido en un Server Component.
 // Para leer el contrato desde el servidor existe `@firma-kit/react/server`.
 
-export { FirmaField, modosDisponibles } from "./FirmaField.js";
-export type { FirmaFieldHandle, FirmaFieldProps } from "./FirmaField.js";
+export { SignatureField, availableModes } from "./SignatureField.js";
+export type { SignatureFieldHandle, SignatureFieldProps } from "./SignatureField.js";
 export { createCanvasPngEncoder, toPngBlob } from "./encoder.js";
 export {
-  cargarFuente,
+  loadFont,
   createCanvasTextMeasurer,
   createCanvasTextRasterizer,
-  familiaFont,
+  fontFamily,
 } from "./rasterizer.js";
-export { FUENTES_ESCRIBIR, MENSAJES_ES, mensajeRechazo } from "@firma-kit/core";
+export { TYPE_FONTS, MESSAGES_ES, rejectionMessage } from "@firma-kit/core";
 export type {
-  EstiloTexto,
-  Firma,
-  MedidorTexto,
-  ModoFirma,
-  MotivoRechazo,
-  ResultadoFirma,
+  TextStyle,
+  Signature,
+  TextMeasurer,
+  SignatureMode,
+  RejectionReason,
+  SignatureResult,
   TextRasterizer,
-  Verificador,
+  Verifier,
 } from "@firma-kit/core";

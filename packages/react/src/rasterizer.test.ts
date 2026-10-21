@@ -9,9 +9,9 @@ describe("createCanvasTextRasterizer", () => {
       height: 0,
       getContext: () => null,
     }) as unknown as HTMLCanvasElement);
-    const res = rasterizer.rasterizar(
+    const res = rasterizer.rasterize(
       ["Ana"],
-      { familia: "Caveat", tamano: 48 },
+      { family: "Caveat", size: 48 },
       55,
       { width: 400, height: 200 }
     );

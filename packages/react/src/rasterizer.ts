@@ -6,14 +6,14 @@
 
 import type { Bitmap } from "@firma-kit/core";
 import type {
-  EstiloTexto,
-  MedidorTexto,
+  TextStyle,
+  TextMeasurer,
   TextRasterizer,
 } from "@firma-kit/core";
 
 type Lienzo = HTMLCanvasElement | OffscreenCanvas;
 
-function crearLienzo(width: number, height: number): Lienzo {
+function createCanvas(width: number, height: number): Lienzo {
   if (typeof OffscreenCanvas !== "undefined") {
     return new OffscreenCanvas(width, height);
   }
@@ -23,37 +23,37 @@ function crearLienzo(width: number, height: number): Lienzo {
   return canvas;
 }
 
-/** La familia declarada en `assets/fonts.css`, con una cursiva del sistema de reserva. */
-export function familiaFont(familia: string): string {
-  return `"${familia}", "Segoe Script", "Brush Script MT", cursive`;
+/** La family declarada en `assets/fonts.css`, con una cursiva del sistema de reserva. */
+export function fontFamily(family: string): string {
+  return `"${family}", "Segoe Script", "Brush Script MT", cursive`;
 }
 
 /**
  * Pide al navegador que cargue la cursiva antes de medir. Sin esto, la primera
- * medida usa la fuente de reserva y el nombre se sale de la caja.
+ * medida usa la fuente de reserva y el name se sale de la bounds.
  */
-export async function cargarFuente(familia: string, tamano: number): Promise<void> {
+export async function loadFont(family: string, size: number): Promise<void> {
   const fonts = (globalThis as { document?: Document }).document?.fonts;
   if (!fonts) return;
   try {
-    await fonts.load(`${tamano}px "${familia}"`);
+    await fonts.load(`${size}px "${family}"`);
   } catch {
     // Si la fuente no está, el rasterizador devolverá null y el motivo será
-    // `fuente_no_disponible`; aquí no hay nada que decidir.
+    // `font_unavailable`; aquí no hay nada que decidir.
   }
 }
 
 export function createCanvasTextMeasurer(
   crear?: (width: number, height: number) => Lienzo
-): MedidorTexto {
-  const fabricar = crear ?? crearLienzo;
+): TextMeasurer {
+  const factory = crear ?? createCanvas;
   return {
-    medir(texto: string, estilo: EstiloTexto) {
-      const lienzo = fabricar(8, 8);
-      const ctx = lienzo.getContext("2d") as CanvasRenderingContext2D | null;
-      if (!ctx) return { ancho: texto.length * estilo.tamano * 0.5, alto: estilo.tamano };
-      ctx.font = `${estilo.tamano}px ${familiaFont(estilo.familia)}`;
-      return { ancho: ctx.measureText(texto).width, alto: estilo.tamano };
+    measure(text: string, style: TextStyle) {
+      const canvas = factory(8, 8);
+      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D | null;
+      if (!ctx) return { width: text.length * style.size * 0.5, height: style.size };
+      ctx.font = `${style.size}px ${fontFamily(style.family)}`;
+      return { width: ctx.measureText(text).width, height: style.size };
     },
   };
 }
@@ -61,26 +61,26 @@ export function createCanvasTextMeasurer(
 export function createCanvasTextRasterizer(
   crear?: (width: number, height: number) => Lienzo
 ): TextRasterizer {
-  const fabricar = crear ?? crearLienzo;
+  const factory = crear ?? createCanvas;
   return {
-    rasterizar(lineas, estilo, interlineado, caja): Bitmap | null {
-      const lienzo = fabricar(caja.width, caja.height);
-      lienzo.width = caja.width;
-      lienzo.height = caja.height;
-      const ctx = lienzo.getContext("2d") as CanvasRenderingContext2D | null;
+    rasterize(lines, style, lineHeight, bounds): Bitmap | null {
+      const canvas = factory(bounds.width, bounds.height);
+      canvas.width = bounds.width;
+      canvas.height = bounds.height;
+      const ctx = canvas.getContext("2d") as CanvasRenderingContext2D | null;
       if (!ctx) return null;
       ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, caja.width, caja.height);
+      ctx.fillRect(0, 0, bounds.width, bounds.height);
       ctx.fillStyle = "#000000";
-      ctx.font = `${estilo.tamano}px ${familiaFont(estilo.familia)}`;
+      ctx.font = `${style.size}px ${fontFamily(style.family)}`;
       ctx.textAlign = "center";
       ctx.textBaseline = "alphabetic";
-      lineas.forEach((linea, i) => {
-        const y = estilo.tamano + i * interlineado;
-        ctx.fillText(linea, caja.width / 2, y);
+      lines.forEach((linea, i) => {
+        const y = style.size + i * lineHeight;
+        ctx.fillText(linea, bounds.width / 2, y);
       });
-      const datos = ctx.getImageData(0, 0, caja.width, caja.height);
-      return { data: datos.data, width: caja.width, height: caja.height };
+      const data = ctx.getImageData(0, 0, bounds.width, bounds.height);
+      return { data: data.data, width: bounds.width, height: bounds.height };
     },
   };
 }

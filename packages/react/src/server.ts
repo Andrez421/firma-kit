@@ -5,11 +5,11 @@
 
 export type {
   Bitmap,
-  Firma,
-  ModoFirma,
-  MotivoRechazo,
-  OpcionesFirma,
-  ResultadoFirma,
-  Veredicto,
-  Verificador,
+  Signature,
+  SignatureMode,
+  RejectionReason,
+  SignatureOptions,
+  SignatureResult,
+  Verdict,
+  Verifier,
 } from "@firma-kit/core";
