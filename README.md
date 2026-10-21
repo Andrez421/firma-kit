@@ -32,7 +32,7 @@ packages other apps can import.
 | Package | What | Status |
 | --- | --- | --- |
 | `@firma-kit/core` | Types, contract, `firmar()` for the four modes, ink pipeline (`extractSignature`, `flattenInk`, `stretchLevels`) | done (phase 1) |
-| `@firma-kit/react` | `<FirmaField />`: four tabs, accessible, CSS-variable theming | base done (phase 2) |
+| `@firma-kit/react` | `<SignatureField />`: four tabs, accessible, CSS-variable theming | base done (phase 2) |
 | `@firma-kit/verify` | Two-tier CPU verification: MobileCLIP-S0 zero-shot → SmolVLM-256M | port only, phase 3 |
 
 ## Quick start (core today)
@@ -43,25 +43,25 @@ pnpm test        # 83 tests: pipeline, contrato, modos y componente
 ```
 
 ```ts
-import { firmar, INK_MESSAGE, type Bitmap } from "@firma-kit/core";
+import { sign, MESSAGES_EN, type Bitmap } from "@firma-kit/core";
 
-// `imagen` es lo que ya decodificó tu adaptador: ImageData en el navegador,
-// sharp en el servidor. `core` no toca DOM ni red.
-declare const imagen: Bitmap;
-declare const encodePng: (b: Bitmap) => Promise<Uint8Array>;
+// `image` is whatever your adapter already decoded: ImageData in the browser,
+// a sharp buffer on the server. `core` touches no DOM and no network.
+declare const image: Bitmap;
+declare const encodePng: (bitmap: Bitmap) => Promise<Uint8Array>;
 
-const resultado = await firmar({ modo: "subir", imagen }, encodePng);
-if (!resultado.ok) {
-  // `motivo` es un código; `mensaje` ya está en español neutro.
-  console.log(resultado.motivo, resultado.mensaje);
+const result = await sign({ mode: "upload", image }, encodePng);
+if (!result.ok) {
+  // `reason` is a code; `message` is already written for the person signing.
+  console.log(result.reason, result.message);
 } else {
-  // PNG opaco, tinta sobre blanco, <= 900px de ancho.
-  console.log(resultado.firma.png.byteLength);
+  // Opaque PNG, ink on white, <= 900px wide.
+  console.log(result.signature.png.byteLength);
 }
 ```
 
-En React: `import { FirmaField } from "@firma-kit/react"` y su hoja
-`@firma-kit/react/firma-kit.css`. Banco de pruebas manual con
+In React: `import { SignatureField } from "@firma-kit/react"` plus its
+stylesheet `@firma-kit/react/firma-kit.css`. Manual test bench:
 `pnpm --filter @firma-kit/playground dev`.
 
 ## Docs

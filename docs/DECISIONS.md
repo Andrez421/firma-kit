@@ -166,3 +166,25 @@ por una. Cero documentos reales de personas.
 **Consecuencias.** La métrica se valida en local; el arnés y los sintéticos se
 revisan en público. El arnés sale con código 1 si los falsos rechazos superan el
 2 % o los falsos aceptados bajan del 90 %.
+
+## ADR-004 (enmienda) — Inglés primario, español completo
+
+**Contexto.** La redacción original decía «código, identificadores y comentarios
+en inglés», pero el andamiaje había fijado el contrato en español (`Firma`,
+`OpcionesFirma`, `MotivoRechazo`) y los valores de los enums también
+(`"sin_tinta"`, `"dibujar"`). Un contrato mitad en cada idioma no se puede
+publicar: quien lo consuma escribe `resultado.firma.modo === "dibujar"` en un
+código que se llama `extractSignature`.
+
+**Decisión.** El inglés es el idioma primario del código y del contrato público:
+tipos, campos, funciones, valores de enum, nombres de archivo, clases CSS y
+títulos de test. El español se mantiene completo donde lo ve una persona: los
+mensajes de rechazo (`messages/es.ts`), las etiquetas de la interfaz y la
+documentación de producto. Ambos idiomas se sirven desde el paquete, y el idioma
+por defecto es el inglés (`locale: "en"`), con `"es"` como opción explícita.
+
+**Consecuencias.** Renombrar ahora costó un commit grande y no costó nada a
+nadie: no había nada publicado. A partir de la publicación, el contrato es
+estable y los cambios de nombre son breaking. Queda pendiente traducir al inglés
+los documentos internos de `docs/` (producto, arquitectura, relevamiento), que
+hoy siguen en español.

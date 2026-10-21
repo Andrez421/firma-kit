@@ -32,7 +32,7 @@ aplicaciones pueden importar.
 | Paquete | Qué es | Estado |
 | --- | --- | --- |
 | `@firma-kit/core` | Tipos, contrato, `firmar()` de los cuatro modos, pipeline de tinta | hecho (fase 1) |
-| `@firma-kit/react` | `<FirmaField />`: cuatro pestañas, accesible, temas por CSS | base hecha (fase 2) |
+| `@firma-kit/react` | `<SignatureField />`: cuatro pestañas, accesible, temas por CSS | base hecha (fase 2) |
 | `@firma-kit/verify` | Verificación en dos niveles CPU | solo el puerto, fase 3 |
 
 ## Empezar (el núcleo, hoy)

@@ -2,51 +2,51 @@
 // headless puede verificar: cómo se ven las cursivas reales y si el PNG sale
 // con tinta sobre blanco.
 
-import type { Firma } from "@firma-kit/core";
-import { FirmaField, toPngBlob } from "@firma-kit/react";
+import type { Signature } from "@firma-kit/core";
+import { SignatureField, toPngBlob } from "@firma-kit/react";
 import { useState } from "react";
 
 export function App() {
-  const [nombre, setNombre] = useState("José Muñoz Peña");
-  const [firma, setFirma] = useState<Firma | null>(null);
-  const [rechazo, setRechazo] = useState<string | null>(null);
+  const [name, setNombre] = useState("José Muñoz Peña");
+  const [signature, setFirma] = useState<Signature | null>(null);
+  const [rejection, setRechazo] = useState<string | null>(null);
 
-  const url = firma ? URL.createObjectURL(toPngBlob(firma)) : null;
+  const url = signature ? URL.createObjectURL(toPngBlob(signature)) : null;
 
   return (
     <main style={{ fontFamily: "system-ui, sans-serif", padding: 24, maxWidth: 720 }}>
-      <h1>firma-kit · playground</h1>
+      <h1>signature-kit · playground</h1>
 
       <label style={{ display: "block", marginBottom: 12 }}>
         <span>Nombre a escribir</span>
         <input
-          value={nombre}
-          onChange={(evento) => setNombre(evento.target.value)}
+          value={name}
+          onChange={(event) => setNombre(event.target.value)}
           style={{ display: "block", minHeight: 44, width: "100%" }}
         />
       </label>
 
-      <FirmaField
-        nombre={nombre}
-        onFirma={(nueva) => {
+      <SignatureField
+        name={name}
+        onSignature={(nueva) => {
           setFirma(nueva);
           setRechazo(null);
         }}
-        onRechazo={(_motivo, mensaje) => {
+        onRejection={(_motivo, message) => {
           setFirma(null);
-          setRechazo(mensaje);
+          setRechazo(message);
         }}
       />
 
-      {rechazo ? <p role="status">Rechazo: {rechazo}</p> : null}
+      {rejection ? <p role="status">Rechazo: {rejection}</p> : null}
 
-      {firma && url ? (
+      {signature && url ? (
         <section>
-          <h2>Resultado ({firma.ancho}×{firma.alto})</h2>
+          <h2>Resultado ({signature.width}×{signature.height})</h2>
           <p>
-            Modo: {firma.modo}
-            {firma.realzada ? " · niveles realzados" : ""} ·{" "}
-            {Math.round(firma.png.byteLength / 1024)} KB
+            Modo: {signature.mode}
+            {signature.enhanced ? " · niveles realzados" : ""} ·{" "}
+            {Math.round(signature.png.byteLength / 1024)} KB
           </p>
           <img
             src={url}

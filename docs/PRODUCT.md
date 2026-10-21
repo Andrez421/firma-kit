@@ -55,5 +55,7 @@ y documentado para que un tercero lo use sin leer el código.
 
 - Nombre/lanzamiento en npm (¿`firma-kit` libre?) y si el primer release es
   `0.1.0` con solo `core` o se espera a `react`.
-- Idioma de la API pública (inglés) frente a los mensajes de usuario (español
-  primero, i18n después).
+- ~~Idioma de la API pública frente a los mensajes de usuario~~: resuelto en la
+  enmienda de ADR-004 — contrato en inglés, mensajes en inglés y español.
+- Traducir `docs/PRODUCT.md`, `docs/ARCHITECTURE.md` y `docs/SURVEY.md` al inglés
+  (hoy solo están en español; el README ya es bilingüe).
