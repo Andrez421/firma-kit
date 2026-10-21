@@ -16,6 +16,16 @@ export default defineConfig({
           include: ["packages/core/src/**/*.test.ts"],
         },
       },
+      {
+        resolve: {
+          alias: { "@firma-kit/core": path.resolve(import.meta.dirname, "packages/core/src") },
+        },
+        test: {
+          name: "react",
+          environment: "jsdom",
+          include: ["packages/react/src/**/*.test.{ts,tsx}"],
+        },
+      },
     ],
   },
 });

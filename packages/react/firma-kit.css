@@ -1,0 +1,147 @@
+/* Estilos de <FirmaField />.
+ *
+ * Variables propias, no Tailwind: el paquete se tiene que ver bien dentro de
+ * cualquier proyecto, con o sin framework de utilidades. Sobrescribir un token
+ * en el contenedor es todo lo que hace falta para integrarlo.
+ *
+ * Todo objetivo táctil mide al menos 44px: es un dedo sobre un móvil, no un
+ * cursor sobre un escritorio. */
+
+.firma {
+  --firma-color: #111827;
+  --firma-color-tenue: #6b7280;
+  --firma-fondo: #ffffff;
+  --firma-borde: #d1d5db;
+  --firma-foco: #2563eb;
+  --firma-error: #b91c1c;
+  --firma-radio: 10px;
+  --firma-separacion: 12px;
+  --firma-fuente: system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  color: var(--firma-color);
+  display: flex;
+  flex-direction: column;
+  font-family: var(--firma-fuente);
+  gap: var(--firma-separacion);
+  max-width: 100%;
+}
+
+@media (prefers-color-scheme: dark) {
+  .firma {
+    --firma-color: #f9fafb;
+    --firma-color-tenue: #9ca3af;
+    --firma-fondo: #111827;
+    --firma-borde: #374151;
+    --firma-foco: #60a5fa;
+    --firma-error: #fca5a5;
+  }
+}
+
+.firma__tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.firma__tab {
+  background: transparent;
+  border: 1px solid var(--firma-borde);
+  border-radius: var(--firma-radio);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px 14px;
+}
+
+.firma__tab--activa {
+  border-color: var(--firma-foco);
+  box-shadow: inset 0 -2px 0 var(--firma-foco);
+  font-weight: 600;
+}
+
+.firma__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--firma-separacion);
+}
+
+.firma__lienzo {
+  background: var(--firma-fondo);
+  border: 1px dashed var(--firma-borde);
+  border-radius: var(--firma-radio);
+  height: 200px;
+  touch-action: none;
+  width: 100%;
+}
+
+.firma__vista-previa {
+  color: var(--firma-color-tenue);
+  margin: 0;
+}
+
+.firma__archivo {
+  align-items: center;
+  border: 1px dashed var(--firma-borde);
+  border-radius: var(--firma-radio);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  justify-content: center;
+  min-height: 96px;
+  padding: 16px;
+}
+
+.firma__archivo input {
+  min-height: 44px;
+}
+
+.firma__acciones {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.firma__boton {
+  background: transparent;
+  border: 1px solid var(--firma-borde);
+  border-radius: var(--firma-radio);
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  min-height: 44px;
+  min-width: 44px;
+  padding: 10px 16px;
+}
+
+.firma__boton--principal {
+  background: var(--firma-foco);
+  border-color: var(--firma-foco);
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.firma__boton[disabled] {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.firma__tab:focus-visible,
+.firma__boton:focus-visible,
+.firma__archivo input:focus-visible,
+.firma__lienzo:focus-visible {
+  outline: 3px solid var(--firma-foco);
+  outline-offset: 2px;
+}
+
+.firma__error {
+  color: var(--firma-error);
+  margin: 0;
+}
+
+.firma__estado {
+  color: var(--firma-color-tenue);
+  margin: 0;
+  min-height: 1.25em;
+}
