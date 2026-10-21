@@ -7,7 +7,10 @@
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "assets"
+  ],
   "peerDependencies": {
     "react": ">=18",
     "react-dom": ">=18"
