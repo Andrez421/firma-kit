@@ -4,6 +4,7 @@ import {
   layoutEscribir,
   type EstiloTexto,
   type MedidorTexto,
+  type OpcionesEscribir,
 } from "./escribir.js";
 
 // Medidor de mentira pero monótono: ancho proporcional a caracteres y tamaño.
@@ -15,7 +16,11 @@ const medidor: MedidorTexto = {
 };
 
 const CAJA = { width: 400, height: 120 };
-const OPCIONES = { familia: "Caveat", tamanoMaximo: 72, tamanoMinimo: 12 };
+const OPCIONES: OpcionesEscribir = {
+  familia: "Caveat",
+  tamanoMaximo: 72,
+  tamanoMinimo: 12,
+};
 
 describe("layoutEscribir", () => {
   it("rechaza el texto vacío o solo espacios", () => {

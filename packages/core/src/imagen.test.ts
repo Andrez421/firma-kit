@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { scaleToWidth } from "./imagen.js";
+import { scaleToMaxSide, scaleToWidth } from "./imagen.js";
 
 // Imagen de dos bloques: mitad izquierda negra, mitad derecha blanca.
 function mitades(w: number, h: number) {
@@ -48,5 +48,24 @@ describe("scaleToWidth", () => {
     const res = scaleToWidth(mitades(37, 23), 11);
     expect(res.data.length).toBe(res.width * res.height * 4);
     for (let i = 3; i < res.data.length; i += 4) expect(res.data[i]).toBe(255);
+  });
+});
+
+describe("scaleToMaxSide", () => {
+  it("escala por el alto cuando la imagen es vertical", () => {
+    const res = scaleToMaxSide(mitades(60, 120), 60);
+    expect(res.height).toBe(60);
+    expect(res.width).toBe(30);
+  });
+
+  it("escala por el ancho cuando la imagen es horizontal", () => {
+    const res = scaleToMaxSide(mitades(120, 60), 60);
+    expect(res.width).toBe(60);
+    expect(res.height).toBe(30);
+  });
+
+  it("no toca una imagen que ya cabe en el lado máximo", () => {
+    const original = mitades(100, 50);
+    expect(scaleToMaxSide(original, 1200).data).toBe(original.data);
   });
 });

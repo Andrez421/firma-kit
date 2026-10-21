@@ -14,6 +14,8 @@ export const MENSAJES_ES: Record<MotivoRechazo, string> = {
     "La imagen pesa demasiado para procesarla. Prueba con una foto más pequeña o recórtala.",
   formato_no_soportado:
     "Solo aceptamos PNG o JPG. Convierte la imagen a uno de esos formatos y vuelve a intentarlo.",
+  fuente_no_disponible:
+    "No pudimos cargar la letra para escribir tu firma. Espera un momento y vuelve a intentarlo, o elige otra letra.",
 };
 
 /**

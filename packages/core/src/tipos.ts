@@ -12,7 +12,8 @@ export type MotivoRechazo =
   | InkReason // ilegible | sin_tinta | fondo_oscuro | no_es_firma | ruido
   | "vacia" // el lienzo está en blanco o el texto de "escribir" está vacío
   | "muy_pesada" // supera el tope de bytes antes de limpiar
-  | "formato_no_soportado"; // ni PNG ni JPEG
+  | "formato_no_soportado" // ni PNG ni JPEG
+  | "fuente_no_disponible"; // la cursiva no cargó, así que no se pudo escribir
 
 /**
  * Imagen RGBA ya decodificada: `ImageData` en el navegador, buffer de sharp en

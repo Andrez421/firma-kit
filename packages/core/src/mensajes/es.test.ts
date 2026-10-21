@@ -16,6 +16,7 @@ const MOTIVOS: MotivoRechazo[] = [
   "vacia",
   "muy_pesada",
   "formato_no_soportado",
+  "fuente_no_disponible",
 ];
 
 describe("MENSAJES_ES", () => {

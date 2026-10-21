@@ -42,6 +42,12 @@ export type InkResult =
       box: InkBox;
       width: number;
       height: number;
+      /**
+       * true si el resultado aprobado salió de la cascada (realce de niveles).
+       * Permite auditar después por qué una firma se ve más contrastada que la
+       * foto original.
+       */
+      realzada?: true;
     }
   | { ok: false; reason: InkReason };
 
@@ -183,7 +189,11 @@ export function extractSignature(
   const confianzaCascada = confianza(rgba, width, height, cascada);
   const elegido =
     directo.ok && confianzaDirecta >= confianzaCascada ? directo : cascada;
-  return gateFirma(elegido, options);
+  const final = gateFirma(elegido, options);
+  // Solo se marca cuando lo aprobado viene del realce: si la limpieza directa
+  // ganó, la firma guardada es la de la foto sin tocar.
+  if (final.ok && elegido === cascada) return { ...final, realzada: true };
+  return final;
 }
 
 /** Cuánto de la estructura oscura del original sobrevive como tinta. */

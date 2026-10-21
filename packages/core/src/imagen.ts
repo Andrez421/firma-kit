@@ -47,3 +47,16 @@ export function scaleToWidth(imagen: Bitmap, anchoMaximo: number): Bitmap {
   }
   return { data, width, height };
 }
+
+/**
+ * Reduce la imagen hasta que su lado mayor quepa en `ladoMaximo`, conservando
+ * la proporción. Es el tope de memoria del análisis: una foto de móvil de
+ * 4000px no se procesa entera.
+ */
+export function scaleToMaxSide(imagen: Bitmap, ladoMaximo: number): Bitmap {
+  const tope = Math.max(1, Math.floor(ladoMaximo));
+  if (Math.max(imagen.width, imagen.height) <= tope) return imagen;
+  if (imagen.width >= imagen.height) return scaleToWidth(imagen, tope);
+  const ancho = Math.max(1, Math.round((imagen.width * tope) / imagen.height));
+  return scaleToWidth(imagen, ancho);
+}

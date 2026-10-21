@@ -324,6 +324,13 @@ describe("extractSignature — enrutador y cascada", () => {
     expect(final.box).toEqual(directo.box);
   });
 
+  it("informa cuándo tuvo que realzar niveles antes de limpiar", () => {
+    // `Firma.realzada` existe para poder auditar después por qué una firma
+    // guardada se ve más contrastada que la foto original.
+    expect(ok(extractSignature(firma(150), W, H)).realzada).toBeUndefined();
+    expect(ok(extractSignature(trazoTenue(200, 178), W, H)).realzada).toBe(true);
+  });
+
   it("una firma muy tenue se recupera realzando niveles antes de limpiar", () => {
     // Foto plana: el trazo es 11% más oscuro que el papel. La limpieza directa
     // no lo ve; la cascada sí.
