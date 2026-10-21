@@ -6,7 +6,6 @@
 // navegador, en el servidor (sharp), en un worker y en los tests.
 export {
   INK_GRAY,
-  INK_MESSAGE,
   countInk,
   extractInk,
   extractSignature,
@@ -16,4 +15,4 @@ export {
   type InkOptions,
   type InkReason,
   type InkResult,
-} from "./pixeles.js";
+} from "./pixels.js";
