@@ -1,0 +1,25 @@
+{
+  "name": "firma-kit",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Módulo de firma reutilizable: dibujar, escribir, subir imagen o tomar foto, con limpieza de tinta y verificación visual on-device.",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22.18",
+    "pnpm": ">=11"
+  },
+  "packageManager": "pnpm@11.9.0",
+  "scripts": {
+    "build": "turbo build",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "type-check": "turbo type-check",
+    "lint": "turbo lint"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.1",
+    "turbo": "^2.10.10",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.11"
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "name": "@firma-kit/react",
+  "version": "0.0.0",
+  "description": "Componentes React del módulo de firma: pestañas dibujar / escribir / subir / foto.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": ["dist"],
+  "peerDependencies": {
+    "react": ">=18",
+    "react-dom": ">=18"
+  },
+  "dependencies": {
+    "@firma-kit/core": "workspace:*"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "type-check": "tsc --noEmit",
+    "lint": "echo \"(pendiente: eslint)\" && exit 0"
+  }
+}
