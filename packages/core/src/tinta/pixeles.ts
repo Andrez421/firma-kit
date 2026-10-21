@@ -15,6 +15,9 @@
 // entorno) se convierte en tinta.
 
 /** Nivel de gris de la tinta impresa (mismo trazo que el lienzo dibujado). */
+// Los accesos indexados de este módulo están acotados por construcción
+// (n = width * height y buffers del mismo tamaño); las aserciones `!` que
+// aparecen más abajo declaran esa garantía para `noUncheckedIndexedAccess`.
 export const INK_GRAY = 20;
 
 /** Alfa mínimo que cuenta como tinta para cobertura y caja. */
@@ -94,8 +97,9 @@ export function extractInk(
   const lum = new Float32Array(n);
   for (let i = 0; i < n; i++) {
     const j = i * 4;
-    const a = rgba[j + 3] / 255;
-    const l = 0.299 * rgba[j] + 0.587 * rgba[j + 1] + 0.114 * rgba[j + 2];
+    const a = rgba[j + 3]! / 255;
+    const l =
+      0.299 * rgba[j]! + 0.587 * rgba[j + 1]! + 0.114 * rgba[j + 2]!;
     lum[i] = l * a + 255 * (1 - a);
   }
 
@@ -106,10 +110,10 @@ export function extractInk(
   //    escala de grises: papel a 150 y papel a 250 dan el mismo resultado.
   const alpha = new Uint8ClampedArray(n);
   for (let i = 0; i < n; i++) {
-    const m = mean[i];
-    const t = m * (1 + k * (dev[i] / 128 - 1));
+    const m = mean[i]!;
+    const t = m * (1 + k * (dev[i]! / 128 - 1));
     const ramp = Math.max(6, t * 0.12);
-    const a = (t - lum[i]) / ramp;
+    const a = (t - lum[i]!) / ramp;
     alpha[i] = a <= 0 ? 0 : a >= 1 ? 255 : Math.round(a * 255);
   }
 
@@ -126,7 +130,7 @@ export function extractInk(
   // 6. Corte duro por debajo del umbral de tinta: el antialiasing más tenue se
   //    descarta y el papel queda blanco puro al aplanar (255 exacto), no un
   //    velo de gris.
-  for (let i = 0; i < n; i++) if (clean[i] <= ALPHA_TINTA) clean[i] = 0;
+  for (let i = 0; i < n; i++) if (clean[i]! <= ALPHA_TINTA) clean[i] = 0;
 
   const count = countInk(clean);
   if (count < 12) return { ok: false, reason: "sin_tinta" };
@@ -205,7 +209,7 @@ function confianza(
   const papel = percentil(lum, 0.9);
   const umbral = papel * 0.55;
   let oscuro = 0;
-  for (let i = 0; i < lum.length; i++) if (lum[i] < umbral) oscuro++;
+  for (let i = 0; i < lum.length; i++) if (lum[i]! < umbral) oscuro++;
   if (oscuro === 0) return 1;
   return countInk(res.alpha) / oscuro;
 }
@@ -261,7 +265,7 @@ export function stretchLevels(
   // Oscuridad relativa al fondo local, en 0..255 (255 = igual al papel).
   const rel = new Float32Array(n);
   for (let i = 0; i < n; i++) {
-    rel[i] = Math.min(1, lum[i] / Math.max(mean[i], 1)) * 255;
+    rel[i] = Math.min(1, lum[i]! / Math.max(mean[i]!, 1)) * 255;
   }
   // Cola oscura = extremo bajo (percentil 2): si la firma ocupa más que eso,
   // cae dentro. Ventana alta = papel (percentil 98).
@@ -277,7 +281,7 @@ export function stretchLevels(
   if (rango < 10) {
     for (let i = 0; i < n; i++) {
       const j = i * 4;
-      const v = Math.round(Math.min(255, Math.max(0, lum[i])));
+      const v = Math.round(Math.min(255, Math.max(0, lum[i]!)));
       out[j] = v;
       out[j + 1] = v;
       out[j + 2] = v;
@@ -287,7 +291,7 @@ export function stretchLevels(
   }
 
   for (let i = 0; i < n; i++) {
-    const t = Math.min(1, Math.max(0, (rel[i] - pBajo) / rango));
+    const t = Math.min(1, Math.max(0, (rel[i]! - pBajo) / rango));
     const v = Math.round(255 * Math.pow(t, gamma));
     const j = i * 4;
     out[j] = v;
@@ -316,7 +320,7 @@ export function flattenInk(
     const src = (y + box.y) * width + box.x;
     const dst = y * outW;
     for (let x = 0; x < outW; x++) {
-      const a = alpha[src + x] / 255;
+      const a = alpha[src + x]! / 255;
       const v = Math.round(INK_GRAY * a + 255 * (1 - a));
       const o = (dst + x) * 4;
       rgba[o] = v;
@@ -331,7 +335,7 @@ export function flattenInk(
 /** Cuenta los píxeles de tinta significativos (para el informe de reproceso). */
 export function countInk(alpha: Uint8ClampedArray): number {
   let count = 0;
-  for (let i = 0; i < alpha.length; i++) if (alpha[i] > ALPHA_TINTA) count++;
+  for (let i = 0; i < alpha.length; i++) if (alpha[i]! > ALPHA_TINTA) count++;
   return count;
 }
 
@@ -346,8 +350,9 @@ function luminancia(
   const lum = new Float32Array(n);
   for (let i = 0; i < n; i++) {
     const j = i * 4;
-    const a = rgba[j + 3] / 255;
-    const l = 0.299 * rgba[j] + 0.587 * rgba[j + 1] + 0.114 * rgba[j + 2];
+    const a = rgba[j + 3]! / 255;
+    const l =
+      0.299 * rgba[j]! + 0.587 * rgba[j + 1]! + 0.114 * rgba[j + 2]!;
     lum[i] = l * a + 255 * (1 - a);
   }
   return lum;
@@ -357,12 +362,12 @@ function luminancia(
 function percentil(valores: Float32Array, q: number): number {
   const hist = new Uint32Array(256);
   for (let i = 0; i < valores.length; i++) {
-    const v = Math.min(255, Math.max(0, Math.round(valores[i])));
-    hist[v]++;
+    const v = Math.min(255, Math.max(0, Math.round(valores[i]!)));
+    hist[v] = hist[v]! + 1;
   }
   let acc = 0;
   for (let v = 0; v < 256; v++) {
-    acc += hist[v];
+    acc += hist[v]!;
     if (acc / valores.length >= q) return v;
   }
   return 255;
@@ -387,13 +392,13 @@ function regiones(
   const cola = new Int32Array(width * height);
   const salida: Region[] = [];
   const empuja = (i: number, cabeza: number) => {
-    if (vistas[i] || alpha[i] <= ALPHA_TINTA) return cabeza;
+    if (vistas[i]! || alpha[i]! <= ALPHA_TINTA) return cabeza;
     vistas[i] = 1;
     cola[cabeza] = i;
     return cabeza + 1;
   };
   for (let inicio = 0; inicio < alpha.length; inicio++) {
-    if (vistas[inicio] || alpha[inicio] <= ALPHA_TINTA) continue;
+    if (vistas[inicio]! || alpha[inicio]! <= ALPHA_TINTA) continue;
     let cabeza = 0;
     let fin = empuja(inicio, 0);
     const r: Region = {
@@ -405,7 +410,7 @@ function regiones(
       tocaBorde: false,
     };
     while (cabeza < fin) {
-      const i = cola[cabeza++];
+      const i = cola[cabeza++]!;
       const x = i % width;
       const y = (i - x) / width;
       r.area++;
@@ -442,22 +447,22 @@ function boxSum(
   for (let y = 0; y < height; y++) {
     const row = y * width;
     pref[0] = 0;
-    for (let x = 0; x < width; x++) pref[x + 1] = pref[x] + src[row + x];
+    for (let x = 0; x < width; x++) pref[x + 1] = pref[x]! + src[row + x]!;
     for (let x = 0; x < width; x++) {
       const from = clampIndex(x - radius, width);
       const to = clampIndex(x + radius + 1, width);
-      out[row + x] = pref[to] - pref[from];
+      out[row + x] = pref[to]! - pref[from]!;
     }
   }
   const col = new Float32Array(height);
   for (let x = 0; x < width; x++) {
-    for (let y = 0; y < height; y++) col[y] = out[y * width + x];
+    for (let y = 0; y < height; y++) col[y] = out[y * width + x]!;
     pref[0] = 0;
-    for (let y = 0; y < height; y++) pref[y + 1] = pref[y] + col[y];
+    for (let y = 0; y < height; y++) pref[y + 1] = pref[y]! + col[y]!;
     for (let y = 0; y < height; y++) {
       const from = clampIndex(y - radius, height);
       const to = clampIndex(y + radius + 1, height);
-      out[y * width + x] = pref[to] - pref[from];
+      out[y * width + x] = pref[to]! - pref[from]!;
     }
   }
 }
@@ -472,7 +477,7 @@ function localStats(
   const sum = new Float32Array(n);
   boxSum(lum, width, height, radius, sum);
   const squares = new Float32Array(n);
-  for (let i = 0; i < n; i++) squares[i] = lum[i] * lum[i];
+  for (let i = 0; i < n; i++) squares[i] = lum[i]! * lum[i]!;
   const sumSq = new Float32Array(n);
   boxSum(squares, width, height, radius, sumSq);
 
@@ -491,10 +496,10 @@ function localStats(
     const cuentaY = Math.min(height, y + radius + 1) - Math.max(0, y - radius);
     for (let x = 0; x < width; x++) {
       const i = y * width + x;
-      const area = cuentaX[x] * cuentaY;
-      const m = sum[i] / area;
+      const area = cuentaX[x]! * cuentaY;
+      const m = sum[i]! / area;
       mean[i] = m;
-      const variance = sumSq[i] / area - m * m;
+      const variance = sumSq[i]! / area - m * m;
       dev[i] = variance > 0 ? Math.sqrt(variance) : 0;
     }
   }
@@ -520,7 +525,7 @@ function dropBorderFrame(
   let cabeza = 0;
   let cola_ = 0;
   const encolar = (i: number) => {
-    if (marcado[i] || alpha[i] <= ALPHA_TINTA) return;
+    if (marcado[i]! || alpha[i]! <= ALPHA_TINTA) return;
     marcado[i] = 1;
     cola[cola_++] = i;
   };
@@ -539,7 +544,7 @@ function dropBorderFrame(
   let minY = height;
   let maxY = -1;
   while (cabeza < cola_) {
-    const i = cola[cabeza++];
+    const i = cola[cabeza++]!;
     marcados++;
     const x = i % width;
     const y = (i - x) / width;
@@ -576,7 +581,7 @@ function despeckle(
   for (let y = 0; y < height; y++) {
     for (let x = 0; x < width; x++) {
       const i = y * width + x;
-      if (alpha[i] <= ALPHA_TINTA) continue;
+      if (alpha[i]! <= ALPHA_TINTA) continue;
       let vecinos = 0;
       for (let dy = -1; dy <= 1; dy++) {
         const yy = y + dy;
@@ -585,7 +590,7 @@ function despeckle(
           if (!dx && !dy) continue;
           const xx = x + dx;
           if (xx < 0 || xx >= width) continue;
-          if (alpha[yy * width + xx] > ALPHA_TINTA) vecinos++;
+          if (alpha[yy * width + xx]! > ALPHA_TINTA) vecinos++;
         }
       }
       if (vecinos < 2) out[i] = 0;

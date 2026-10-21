@@ -83,7 +83,7 @@ function porcionGris(res: Extract<InkResult, { ok: true }>) {
   const plano = flattenInk(res.alpha, W, H, res.box);
   let grises = 0;
   for (let i = 0; i < plano.rgba.length; i += 4) {
-    if (plano.rgba[i] < 240) grises++;
+    if (plano.rgba[i]! < 240) grises++;
   }
   return grises / (plano.rgba.length / 4);
 }
@@ -97,7 +97,7 @@ describe("extractInk — el fondo nunca llega al PDF", () => {
     const res = ok(extractInk(firma(255), W, H));
     expect(pixel(res, 0, 0)).toBe(0);
     expect(pixel(res, W - 1, H - 1)).toBe(0);
-    const [cx, cy] = CURVA[60];
+    const [cx, cy] = CURVA[60]!;
     expect(pixel(res, cx, cy)).toBeGreaterThan(200);
   });
 
@@ -246,7 +246,7 @@ describe("extractInk — rechazos accionables", () => {
     // trazo son la misma región conectada, así que el filtro de borde no
     // puede descartar la banda sin llevarse la firma. Se prefiere conservarla.
     const res = ok(extractInk(firma((x) => (x > W / 2 ? 35 : 230)), W, H));
-    const [cx, cy] = CURVA[60];
+    const [cx, cy] = CURVA[60]!;
     expect(pixel(res, cx, cy)).toBeGreaterThan(200);
     expect(porcionGris(res)).toBeLessThan(0.35);
   });
@@ -330,7 +330,7 @@ describe("extractSignature — enrutador y cascada", () => {
     const px = trazoTenue(200, 178);
     expect(extractInk(px, W, H).ok).toBe(false);
     const final = ok(extractSignature(px, W, H));
-    const [cx, cy] = CURVA[60];
+    const [cx, cy] = CURVA[60]!;
     expect(pixel(final, cx, cy)).toBeGreaterThan(60);
     expect(pixel(final, 0, 0)).toBe(0);
   });
@@ -341,7 +341,7 @@ describe("extractSignature — enrutador y cascada", () => {
     // esquina (papel) casi blanca
     expect(datos[0]).toBeGreaterThan(240);
     // centro del trazo, claramente más oscuro
-    const [cx, cy] = CURVA[60];
+    const [cx, cy] = CURVA[60]!;
     const i = (cy * W + cx) * 4;
     expect(datos[i]).toBeLessThan(120);
   });
