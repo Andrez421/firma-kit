@@ -2,6 +2,7 @@
 // modelos) se construye sobre estos tipos.
 
 import type { InkReason } from "./tinta/pixeles.js";
+import type { Verificador } from "./verificador.js";
 
 /** Las cuatro formas de firmar. */
 export type ModoFirma = "dibujar" | "escribir" | "subir" | "foto";
@@ -13,10 +14,28 @@ export type MotivoRechazo =
   | "muy_pesada" // supera el tope de bytes antes de limpiar
   | "formato_no_soportado"; // ni PNG ni JPEG
 
+/**
+ * Imagen RGBA ya decodificada: `ImageData` en el navegador, buffer de sharp en
+ * el servidor. `core` no decodifica ni crea canvas; solo consume esta forma.
+ */
+export type Bitmap = {
+  data: Uint8ClampedArray | Uint8Array;
+  width: number;
+  height: number;
+};
+
+/**
+ * Codifica RGBA opaco a PNG. `core` no puede hacerlo sin canvas o sin una
+ * dependencia de imagen, así que entra por aquí: `canvas.toBlob` en el
+ * navegador, sharp en el servidor. `@firma-kit/react` trae una implementación.
+ */
+export type EncodePng = (imagen: Bitmap) => Promise<Uint8Array> | Uint8Array;
+
 /** Firma lista para guardar: siempre PNG opaco (tinta sobre blanco). */
 export type Firma = {
   modo: ModoFirma;
-  png: Blob;
+  /** PNG ya codificado. `Uint8Array` sirve igual en Node y en el navegador. */
+  png: Uint8Array;
   ancho: number;
   alto: number;
   /** ISO 8601, para trazabilidad en el registro. */
@@ -35,8 +54,13 @@ export type OpcionesFirma = {
   anchoMaximo?: number;
   /** Lado mayor que se analiza. Por defecto 1200 (memoria del móvil). */
   ladoAnalisis?: number;
-  /** Si la verificación visual está disponible, úsala en subir/foto. */
-  verificarImagen?: boolean;
+  /**
+   * Verificador visual opcional (fase 3). Su ausencia significa "no verificar":
+   * no hay un booleano aparte que pueda contradecirlo.
+   */
+  verificador?: Verificador;
+  /** Sobrescribe el mensaje de un motivo de rechazo concreto. */
+  mensajes?: Partial<Record<MotivoRechazo, string>>;
   /** Idioma de los mensajes de rechazo. Por defecto `es`. */
   idioma?: "es";
 };
