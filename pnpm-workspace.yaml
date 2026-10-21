@@ -1,3 +1,9 @@
 packages:
   - "packages/*"
   - "apps/*"
+
+# esbuild es el empaquetador de Vite y necesita su binario nativo. Es la única
+# dependencia con script de instalación en el repositorio y sólo la usa el
+# playground (dev, no se publica). pnpm 11 pide aprobarla explícitamente.
+allowBuilds:
+  esbuild: true

@@ -64,15 +64,18 @@ Documento de especificación: leer hasta `## Log`.
 
 | ID | Tarea | Specs | Ruta | Commit |
 | --- | --- | --- | --- | --- |
-| T1 | Flags estrictos + ediciones no conductuales al pipeline | S10 | inline | `chore(types): enable strict indexed access flags` |
-| T2 | Contrato: `Bitmap`, `detectarFormato`, `EncodePng`, `Firma.png: Uint8Array`, `mensajes/es.ts`, puerto `Verificador` | S1 S3 S4 S11 | inline | pendiente |
-| T3 | Modo `dibujar`: lógica pura del trazo + tests | S1 | pendiente | pendiente |
-| T4 | Modo `escribir`: layout puro + `TextRasterizer` + fuentes OFL | S2 | pendiente | pendiente |
-| T5 | `subir`/`foto`: pipeline conectado, gates, recorte y contrato de salida | S1 S3 | pendiente | pendiente |
-| T6 | `<FirmaField />`, CSS variables, a11y, encoder de canvas, `/server` | S8 | pendiente | pendiente |
-| T7 | `apps/playground` y verificación visual de fondo y fuentes | S9 | pendiente | pendiente |
-| T8 | Workflow de CI | S6 | pendiente | pendiente |
-| T9 | ADR-005..012 | S12 | pendiente | pendiente |
+| T1 | Flags estrictos + ediciones no conductuales al pipeline | S10 | inline | `a08f2ea` |
+| T2 | Contrato: `Bitmap`, `detectarFormato`, `EncodePng`, `Firma.png: Uint8Array`, `mensajes/es.ts`, puerto `Verificador` | S1 S3 S4 S11 | inline | `8c5b317` |
+| T3 | Modo `dibujar`: trazo puro, rasterizado y escalado | S1 | inline | `0aadb36` |
+| T4 | Modo `escribir`: layout puro + `TextRasterizer` + fuentes OFL | S2 | inline | `ba0f63f` |
+| T5 | `firmar()`: verificación sobre la original, gates, recorte y contrato de salida | S1 S3 | inline | `238acff` |
+| T6 | `<FirmaField />`, CSS variables, a11y, puertos de canvas, `/server` | S8 | inline (worker caído) | `7b8d578` |
+| T7 | `apps/playground` (Vite) | S9 | inline | pendiente |
+| T8 | Workflow de CI | S6 | inline | pendiente |
+| T9 | ADR-005..012 y documentación | S12 | inline | pendiente |
+
+Corte de slices: T1-T2 (≈400 líneas autoradas) y T3-T5, T6 en unidades propias.
+Publicación (S5) no activa ninguna estrategia de entrega todavía.
 
 Fuera de fase 1: `verify` funcional, publicación en npm, `apps/demo` Next.js, i18n.
 
@@ -102,3 +105,28 @@ Fuera de fase 1: `verify` funcional, publicación en npm, `apps/demo` Next.js, i
 - **D3** — El puente no necesita jsdom: `ImageData` es estructuralmente `{ data, width, height }` y jsdom no implementa canvas 2D sin el paquete nativo `canvas`. El test del handoff queda sustituido por S3.
 - **D4** — Tensión detectada y resuelta en ronda 1: ADR-001 prohíbe DOM en `core` y el modo `escribir` exige rasterizar texto. Se resuelve con el puerto `TextRasterizer` (S2), no relajando ADR-001.
 - **E1** — Evidencia T1: `tsc` con los flags estrictos pasa de 55 errores a 0; los 24 tests verdes; equivalencia bit a bit contra `main` en 1260 casos (18 imágenes generadas × 6 tamaños × 7 juegos de opciones sobre `extractInk`, `extractSignature`, `stretchLevels`, `flattenInk`, `countInk`): 0 diferencias.
+
+- **D5** — Motivo nuevo `fuente_no_disponible` en `MotivoRechazo`: una cursiva que
+  no cargó es un estado del sistema accionable y no encaja en `ilegible`.
+- **D6** — `extractSignature` gana `realzada?: true` en su resultado correcto para
+  que `Firma.realzada` sea evidencia y no una suposición. Es aditivo: los 25 tests
+  del pipeline siguen verdes.
+- **D7** — **Decisión pendiente del dueño**: ADR-004 pide identificadores en
+  inglés, pero el contrato del andamiaje está en español (`Firma`, `OpcionesFirma`,
+  `MotivoRechazo`, `detectarFormato`, `mensajeRechazo`). La implementación siguió
+  el patrón existente — contrato en español, capa algorítmica en inglés
+  (`rasterizeStroke`, `smoothStroke`, `scaleToWidth`) —, porque renombrar en
+  caliente habría roto `README` y `docs/PRODUCT`. Hay que decidir antes de publicar:
+  enmendar ADR-004 o renombrar el contrato.
+- **D8** — pnpm 11 bloquea los scripts de instalación: `esbuild` (empaquetador de
+  Vite, solo dev del playground) se autorizó en `pnpm-workspace.yaml` con
+  `allowBuilds`. Es la única dependencia con script de instalación del repo.
+- **D9** — El playground compila (`vite build`) y empaqueta las cuatro fuentes; la
+  verificación visual (tildes, `ñ`, tinta sobre blanco, táctil, lector de
+  pantalla) queda pendiente de una persona con navegador: este entorno no tiene
+  navegador gráfico.
+- **D10** — El agente `gentle-ai-worker` falló dos veces con "assistant reported an
+  error" antes de editar nada; T5 y T6 se hicieron inline y queda reportado como
+  subagente no disponible, no como éxito.
+- **E2** — Evidencia acumulada: 83 tests verdes (10 archivos, proyectos `core` y
+  `react`), `pnpm type-check` y `pnpm build` en verde en todo el workspace.

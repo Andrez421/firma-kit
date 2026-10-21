@@ -2,7 +2,7 @@
 // `core` no puede traer sin dejar de ser puro. Se mantiene aparte del componente
 // para poder probarlo y sustituirlo.
 
-import type { Bitmap, EncodePng } from "@firma-kit/core";
+import type { Bitmap, EncodePng, Firma } from "@firma-kit/core";
 
 type Lienzo = HTMLCanvasElement | OffscreenCanvas;
 
@@ -49,4 +49,16 @@ export function createCanvasPngEncoder(
     const blob = await aBlob(lienzo);
     return new Uint8Array(await blob.arrayBuffer());
   };
+}
+
+/**
+ * Convierte los bytes de una firma en un `Blob` listo para `createObjectURL`,
+ * una descarga o un `FormData`.
+ *
+ * Vive aquí y no en `core` porque un `Blob` es del navegador. La copia no es un
+ * capricho: `Uint8Array<ArrayBufferLike>` no es un `BlobPart` en TypeScript 5.7+,
+ * y construir el `Uint8Array` de nuevo le da su propio `ArrayBuffer`.
+ */
+export function toPngBlob(firma: Pick<Firma, "png">): Blob {
+  return new Blob([new Uint8Array(firma.png)], { type: "image/png" });
 }

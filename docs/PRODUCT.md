@@ -39,8 +39,8 @@ y documentado para que un tercero lo use sin leer el código.
 | Fase | Contenido | Estado |
 | --- | --- | --- |
 | 0 | Andamiaje, docs, contrato de tipos, pipeline de tinta portado + tests | **hecho** |
-| 1 | `core`: puente canvas/ImageData, `dibujar`, `escribir` (fuentes self-hosted), `subir`/`foto` con el contrato | siguiente |
-| 2 | `react`: `<FirmaField />`, estilos con CSS variables, a11y, tests de componente | |
+| 1 | `core`: `Bitmap` estructural, `dibujar`, `escribir` (fuentes self-hosted), `subir`/`foto`, `firmar()` | **hecho** |
+| 2 | `react`: `<FirmaField />`, estilos con CSS variables, a11y, tests de componente | en curso: componente base y a11y hechos |
 | 3 | `verify`: MobileCLIP-S0 int8 (gate) + SmolVLM-256M (segunda opinión), umbrales y evals | |
 | 4 | `apps/demo` (Next.js), publicación en npm, adaptadores (Supabase/Prisma/S3), i18n | |
 

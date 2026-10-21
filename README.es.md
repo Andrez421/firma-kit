@@ -31,15 +31,15 @@ aplicaciones pueden importar.
 
 | Paquete | Qué es | Estado |
 | --- | --- | --- |
-| `@firma-kit/core` | Tipos, contrato y pipeline de tinta | portado + probado |
-| `@firma-kit/react` | `<FirmaField />` con las cuatro pestañas | planificado |
-| `@firma-kit/verify` | Verificación en CPU: MobileCLIP-S0 → SmolVLM-256M | planificado |
+| `@firma-kit/core` | Tipos, contrato, `firmar()` de los cuatro modos, pipeline de tinta | hecho (fase 1) |
+| `@firma-kit/react` | `<FirmaField />`: cuatro pestañas, accesible, temas por CSS | base hecha (fase 2) |
+| `@firma-kit/verify` | Verificación en dos niveles CPU | solo el puerto, fase 3 |
 
 ## Empezar (el núcleo, hoy)
 
 ```bash
 pnpm install
-pnpm test        # 25 tests del pipeline de tinta
+pnpm test        # 83 tests del pipeline de tinta
 ```
 
 ## Documentación

@@ -6,7 +6,7 @@
 
 export { FirmaField, modosDisponibles } from "./FirmaField.js";
 export type { FirmaFieldHandle, FirmaFieldProps } from "./FirmaField.js";
-export { createCanvasPngEncoder } from "./encoder.js";
+export { createCanvasPngEncoder, toPngBlob } from "./encoder.js";
 export {
   cargarFuente,
   createCanvasTextMeasurer,
