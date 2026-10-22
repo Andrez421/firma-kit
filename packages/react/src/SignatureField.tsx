@@ -8,6 +8,7 @@ import {
   rejectionMessage,
   sign,
   rasterizeStroke,
+  strokeWidths,
   TYPE_FONTS,
   detectFormat,
   layoutTypedName,
@@ -38,6 +39,7 @@ import {
 } from "react";
 
 import { createCanvasPngEncoder, toPngBlob } from "./encoder.js";
+import { planDePintado, type EstadoDelLienzo } from "./paintPlan.js";
 import {
   loadFont,
   createCanvasTextMeasurer,
@@ -307,6 +309,17 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
 
     const drawing = useRef(false);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
+    // Cambia al soltar el puntero: fuerza una pasada exacta que corrige lo que se
+    // pintó de forma aproximada durante el trazo.
+    const [finalizado, setFinalizado] = useState(0);
+    // Qué hay pintado ahora mismo: sin esto habría que re-rasterizar a ciegas.
+    // Arranca en -1 para que la primera pasada sea completa y deje el papel blanco.
+    const pintado = useRef<EstadoDelLienzo>({
+      trazos: -1,
+      puntos: -1,
+      finalizado: -1,
+      estilo: "",
+    });
     const tabsRef = useRef<Record<string, HTMLButtonElement | null>>({});
     const baseId = useId();
     const inkFilterId = `ink-${baseId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
@@ -422,12 +435,50 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       if (!canvas) return;
       const ctx = canvas.getContext("2d");
       if (!ctx) return;
-      // El preview usa exactamente las mismas opciones que la firma final.
-      const bitmap = rasterizeStroke(points, CANVAS_SIZE, stroke ?? {});
+
+      // El preview usa exactamente las mismas opciones que la firma final, así que
+      // cualquier cambio en ellas invalida lo pintado.
+      const opciones = stroke ?? {};
+      const actual: EstadoDelLienzo = {
+        trazos: strokes.length,
+        puntos: points.length,
+        finalizado,
+        estilo: `${opciones.minWidth ?? ""}|${opciones.maxWidth ?? ""}|${opciones.ink ?? ""}`,
+      };
+      const plan = planDePintado(pintado.current, actual);
+
+      if (plan === "nada") return;
+
+      if (plan === "segmento") {
+        // Trazo en curso: solo el segmento nuevo. El grosor sale de la misma
+        // función que usa el rasterizador puro, así que la línea no "salta" de
+        // grosor al soltar; la forma exacta llega en la pasada completa.
+        const ultimo = strokes.at(-1);
+        if (ultimo && ultimo.length >= 2) {
+          const desde = ultimo[ultimo.length - 2]!;
+          const hasta = ultimo[ultimo.length - 1]!;
+          const grosores = strokeWidths([desde, hasta], opciones);
+          const tinta = opciones.ink ?? 0;
+          ctx.lineCap = "round";
+          ctx.lineJoin = "round";
+          ctx.lineWidth = (grosores[0]! + grosores[1]!) / 2;
+          ctx.strokeStyle = `rgb(${tinta}, ${tinta}, ${tinta})`;
+          ctx.beginPath();
+          ctx.moveTo(desde.x, desde.y);
+          ctx.lineTo(hasta.x, hasta.y);
+          ctx.stroke();
+        }
+        pintado.current = actual;
+        return;
+      }
+
+      // Pasada exacta: es la que define lo que se ve y lo que se guarda.
+      const bitmap = rasterizeStroke(points, CANVAS_SIZE, opciones);
       const image = ctx.createImageData(bitmap.width, bitmap.height);
       image.data.set(bitmap.data);
       ctx.putImageData(image, 0, 0);
-    }, [points, mode, stroke]);
+      pintado.current = actual;
+    }, [points, strokes, mode, stroke, finalizado]);
 
     const clear = useCallback(() => {
       setStrokes([]);
@@ -752,10 +803,12 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
               onPointerUp={() => {
                 drawing.current = false;
                 setIsDrawing(false);
+                setFinalizado((n) => n + 1);
               }}
               onPointerCancel={() => {
                 drawing.current = false;
                 setIsDrawing(false);
+                setFinalizado((n) => n + 1);
               }}
             />
               {expanded ? (
