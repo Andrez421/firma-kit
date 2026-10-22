@@ -320,6 +320,51 @@ describe("<SignatureField />", () => {
     expect(pantalla.getAttribute("aria-pressed")).toBe("false");
   });
 
+  it("slides one rule to the active tab instead of bordering each one", () => {
+    const { container } = render(<SignatureField />);
+    expect(container.querySelectorAll(".signature__tab-rule")).toHaveLength(1);
+  });
+
+  it("marks the canvas while drawing so the grid steps aside", () => {
+    const { container } = render(<SignatureField />);
+    const lienzo = prepararLienzo(container);
+    const envoltorio = container.querySelector(".signature__canvas-wrap")!;
+    expect(envoltorio.getAttribute("data-drawing")).toBe("false");
+    fireEvent.pointerDown(lienzo, { clientX: 40, clientY: 90, pointerId: 1 });
+    expect(envoltorio.getAttribute("data-drawing")).toBe("true");
+    fireEvent.pointerUp(lienzo, { pointerId: 1 });
+    expect(envoltorio.getAttribute("data-drawing")).toBe("false");
+  });
+
+  it("switches the cursor to the eraser while erasing", () => {
+    const { container } = render(<SignatureField />);
+    const lienzo = container.querySelector("canvas")!;
+    expect(lienzo.className).not.toContain("--erase");
+    fireEvent.click(screen.getByRole("button", { name: "Erase" }));
+    expect(lienzo.className).toContain("--erase");
+  });
+
+  it("gives the impression an ink filter of its own", async () => {
+    const { container } = render(
+      <SignatureField
+        name="Ana Muñoz"
+        encoder={encoder()}
+        measurer={measurer}
+        rasterizer={inkRasterizer}
+      />
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Type" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use this signature" }));
+    const imagen = await screen.findByRole("img", { name: /signature generated/i });
+    const filtro = container.querySelector("filter");
+    expect(filtro).not.toBeNull();
+    // El id es único por instancia y la imagen lo referencia por variable: así
+    // jsdom no descarta el valor al no entender `url(#…)` en `filter`.
+    expect(
+      (imagen as HTMLElement).style.getPropertyValue("--signature-ink")
+    ).toBe(`url(#${filtro!.id})`);
+  });
+
   it("shows the signing line while drawing", () => {
     const { container } = render(<SignatureField />);
     expect(container.querySelector(".signature__baseline")).not.toBeNull();

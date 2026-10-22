@@ -31,6 +31,7 @@ import {
   useEffect,
   useId,
   useImperativeHandle,
+  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -287,6 +288,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
     const [undone, setUndone] = useState<StrokePoint[][]>([]);
     const [erasing, setErasing] = useState(false);
     const [expanded, setExpanded] = useState(false);
+    const [isDrawing, setIsDrawing] = useState(false);
     const points = useMemo(() => strokes.flat(), [strokes]);
     const [file, setFile] = useState<File | null>(null);
     const [signature, setSignature] = useState<Signature | null>(value ?? null);
@@ -307,6 +309,8 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
     const tabsRef = useRef<Record<string, HTMLButtonElement | null>>({});
     const baseId = useId();
+    const inkFilterId = `ink-${baseId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
+    const [rule, setRule] = useState<{ left: number; width: number } | null>(null);
 
     const effectiveEncoder = useMemo(
       () => encoder ?? createCanvasPngEncoder(),
@@ -402,6 +406,14 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       if (!previewUrl) return;
       return () => URL.revokeObjectURL(previewUrl);
     }, [previewUrl]);
+
+    // La regla de la pestaña activa se mide del DOM real: una sola regla que se
+    // desliza, en vez de un borde por pestaña.
+    useLayoutEffect(() => {
+      const activa = tabsRef.current[mode];
+      if (!activa) return;
+      setRule({ left: activa.offsetLeft, width: activa.offsetWidth });
+    }, [mode, available]);
 
     // El lienzo de dibujar se pinta con el mismo rasterizador puro que usa el
     // core: lo que se ve es exactamente lo que se va a guardar.
@@ -626,6 +638,25 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
         data-size={size}
         style={style}
       >
+        {/* Filtro de tinta: grano que desplaza el borde del trazo lo justo para
+            que la impresión se vea impresa y no vectorial. */}
+        <svg aria-hidden="true" className="signature__filters" focusable="false">
+          <filter id={inkFilterId} x="-3%" y="-3%" width="106%" height="106%">
+            <feTurbulence
+              type="fractalNoise"
+              baseFrequency="0.9"
+              numOctaves="2"
+              result="grano"
+            />
+            <feDisplacementMap
+              in="SourceGraphic"
+              in2="grano"
+              scale="1.4"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+          </filter>
+        </svg>
         <div className="signature__tabs" role="tablist" aria-label={label ?? (locale === "es" ? "Firma" : "Signature")}>
           {available.map((availableMode) => {
             const active = availableMode === mode;
@@ -649,6 +680,13 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
               </button>
             );
           })}
+          {rule ? (
+            <span
+              className="signature__tab-rule"
+              aria-hidden="true"
+              style={{ left: rule.left, width: rule.width }}
+            />
+          ) : null}
         </div>
 
         <div
@@ -664,6 +702,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
                   ? "signature__canvas-wrap signature__canvas-wrap--expanded"
                   : "signature__canvas-wrap"
               }
+              data-drawing={isDrawing ? "true" : "false"}
             >
               {/* Guía de línea base: ayuda a encuadrar y se ve como documento. */}
               <span className="signature__baseline" aria-hidden="true">
@@ -678,12 +717,17 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
               ) : null}
             <canvas
               ref={canvasRef}
-              className="signature__canvas"
+              className={
+                erasing
+                  ? "signature__canvas signature__canvas--erase"
+                  : "signature__canvas"
+              }
               width={CANVAS_SIZE.width}
               height={CANVAS_SIZE.height}
               aria-label={texts.canvas}
               onPointerDown={(event) => {
                 drawing.current = true;
+                setIsDrawing(true);
                 event.currentTarget.setPointerCapture(event.pointerId);
                 const p = point(event);
                 if (!p) return;
@@ -707,9 +751,11 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
               }}
               onPointerUp={() => {
                 drawing.current = false;
+                setIsDrawing(false);
               }}
               onPointerCancel={() => {
                 drawing.current = false;
+                setIsDrawing(false);
               }}
             />
               {expanded ? (
@@ -889,6 +935,11 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
                   src={previewUrl}
                   alt={texts.previewAlt}
                   className="signature__result-image"
+                  style={
+                    {
+                      "--signature-ink": `url(#${inkFilterId})`,
+                    } as React.CSSProperties
+                  }
                 />
               </span>
               <p className="signature__status">

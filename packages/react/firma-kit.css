@@ -22,6 +22,14 @@
   --signature-canvas-height: 200px;
   /* Retícula de construcción bajo el lienzo: la hoja donde se firma. */
   --signature-grid: rgba(20, 20, 15, 0.11);
+  /* Viva: sube al pasar el puntero y se aparta mientras se dibuja. */
+  --signature-grid-live: var(--signature-grid);
+  --signature-grid-hover: rgba(20, 20, 15, 0.18);
+  /* Grano de papel: ruido de dos octavas, casi imperceptible. */
+  --signature-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='2'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23g)' opacity='0.05'/%3E%3C/svg%3E");
+  /* Cursores dibujados: pluma para firmar, marco para borrar. */
+  --signature-cursor-pen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath d='M5 23 L10 7 L21 17 Z' fill='%23ffffff' stroke='%2314140f' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 6 22;
+  --signature-cursor-erase: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect x='5' y='5' width='14' height='14' fill='none' stroke='%23c8372d' stroke-width='2'/%3E%3C/svg%3E") 12 12;
   /* Un solo momento de movimiento: el sello que presiona. */
   --signature-press: 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
 
@@ -69,6 +77,10 @@
     --signature-focus: #e4584c;
     --signature-error: #f0a09a;
     --signature-grid: rgba(245, 243, 238, 0.1);
+    --signature-grid: rgba(245, 243, 238, 0.1);
+    --signature-grid-hover: rgba(245, 243, 238, 0.18);
+    --signature-cursor-pen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath d='M5 23 L10 7 L21 17 Z' fill='%2314140f' stroke='%23f5f3ee' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 6 22;
+    --signature-cursor-erase: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect x='5' y='5' width='14' height='14' fill='none' stroke='%23e4584c' stroke-width='2'/%3E%3C/svg%3E") 12 12;
   }
 }
 
@@ -82,6 +94,10 @@
   --signature-focus: #e4584c;
   --signature-error: #f0a09a;
   --signature-grid: rgba(245, 243, 238, 0.1);
+    --signature-grid: rgba(245, 243, 238, 0.1);
+    --signature-grid-hover: rgba(245, 243, 238, 0.18);
+    --signature-cursor-pen: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='28' height='28'%3E%3Cpath d='M5 23 L10 7 L21 17 Z' fill='%2314140f' stroke='%23f5f3ee' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E") 6 22;
+    --signature-cursor-erase: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24'%3E%3Crect x='5' y='5' width='14' height='14' fill='none' stroke='%23e4584c' stroke-width='2'/%3E%3C/svg%3E") 12 12;
 }
 
 /* Tamaños: cambian el lienzo y el aire, nunca los 44px de los objetivos. */
@@ -101,6 +117,25 @@
   display: flex;
   flex-wrap: wrap;
   gap: 0;
+  position: relative;
+}
+
+/* Una sola regla que se desliza a la pestaña activa, en vez de un borde por
+   pestaña: el movimiento cuenta de dónde a dónde vas. */
+.signature__tab-rule {
+  background: var(--signature-focus);
+  bottom: 0;
+  height: 2px;
+  position: absolute;
+  transition:
+    left 160ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    width 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signature__tab-rule {
+    transition: none;
+  }
 }
 
 .signature__tab {
@@ -132,7 +167,6 @@
 }
 
 .signature__tab--active {
-  border-bottom-color: var(--signature-focus);
   color: var(--signature-color);
   font-weight: 600;
 }
@@ -140,6 +174,12 @@
 .signature__tab--active::before {
   background: var(--signature-focus);
   display: block;
+}
+
+.signature__filters {
+  height: 0;
+  position: absolute;
+  width: 0;
 }
 
 .signature__panel {
@@ -174,17 +214,19 @@
 .signature__canvas {
   background-color: var(--signature-surface);
   background-image:
+    var(--signature-grain),
     repeating-linear-gradient(
       to right,
-      var(--signature-grid) 0 1px,
+      var(--signature-grid-live) 0 1px,
       transparent 1px 20px
     ),
     repeating-linear-gradient(
       to bottom,
-      var(--signature-grid) 0 1px,
+      var(--signature-grid-live) 0 1px,
       transparent 1px 20px
     );
   border: 1px solid var(--signature-border);
+  cursor: var(--signature-cursor-pen), crosshair;
   border-radius: var(--signature-radius);
   height: var(--signature-canvas-height);
   touch-action: none;
@@ -204,6 +246,19 @@
   pointer-events: none;
   position: absolute;
   right: 6%;
+}
+
+/* La retícula sube al acercarse y se aparta mientras se firma. */
+.signature__canvas-wrap:hover .signature__canvas {
+  --signature-grid-live: var(--signature-grid-hover);
+}
+
+.signature__canvas-wrap[data-drawing="true"] .signature__canvas {
+  --signature-grid-live: transparent;
+}
+
+.signature__canvas--erase {
+  cursor: var(--signature-cursor-erase), not-allowed;
 }
 
 .signature__hint {
@@ -425,6 +480,9 @@
 
 .signature__result-image {
   background: #ffffff;
+  /* La impresión lleva grano de tinta: el componente solo pasa el id del filtro
+     por variable, la propiedad la decide la hoja. */
+  filter: var(--signature-ink, none);
   border: 1px solid var(--signature-border);
   border-radius: var(--signature-radius);
   max-width: 100%;
