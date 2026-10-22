@@ -109,6 +109,12 @@ export type SignatureFieldProps = {
   verifier?: Verifier;
   maxWidth?: number;
   locale?: Locale;
+  /**
+   * Fuerza el esquema del componente. Sin esto sigue la preferencia del sistema,
+   * y en cualquier caso pinta su propia superficie: el contraste no depende de
+   * la página que lo hospeda.
+   */
+  theme?: "light" | "dark";
   label?: string;
   className?: string;
   /** Puertos inyectables: pruebas sin canvas real. */
@@ -175,6 +181,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       maxWidth = 900,
       label,
       locale = "en",
+      theme,
       className,
       encoder,
       measurer,
@@ -363,7 +370,10 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
     );
 
     return (
-      <div className={className ? `signature ${className}` : "signature"}>
+      <div
+        className={className ? `signature ${className}` : "signature"}
+        data-theme={theme}
+      >
         <div className="signature__tabs" role="tablist" aria-label={label ?? (locale === "es" ? "Firma" : "Signature")}>
           {available.map((availableMode) => {
             const active = availableMode === mode;

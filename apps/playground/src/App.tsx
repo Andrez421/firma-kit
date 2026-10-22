@@ -6,7 +6,10 @@ import type { Signature } from "@firma-kit/core";
 import { SignatureField, toPngBlob } from "@firma-kit/react";
 import { useEffect, useMemo, useState } from "react";
 
+type Tema = "auto" | "light" | "dark";
+
 export function App() {
+  const [theme, setTheme] = useState<Tema>("auto");
   const [name, setName] = useState("José Muñoz Peña");
   const [signature, setSignature] = useState<Signature | null>(null);
   const [rejection, setRejection] = useState<string | null>(null);
@@ -23,8 +26,31 @@ export function App() {
   }, [url]);
 
   return (
-    <main style={{ fontFamily: "system-ui, sans-serif", padding: 24, maxWidth: 720 }}>
-      <h1>signature-kit · playground</h1>
+    <main
+      style={{
+        // Colores del sistema: la página acompaña el esquema en vez de quedarse
+        // blanca bajo un sistema oscuro.
+        background: "Canvas",
+        color: "CanvasText",
+        fontFamily: "system-ui, sans-serif",
+        minHeight: "100vh",
+        padding: 24,
+      }}
+    >
+      <h1 style={{ maxWidth: 720 }}>signature-kit · playground</h1>
+
+      <label style={{ display: "block", marginBottom: 12 }}>
+        <span>Tema: </span>
+        <select
+          value={theme}
+          onChange={(evento) => setTheme(evento.target.value as Tema)}
+          style={{ minHeight: 32 }}
+        >
+          <option value="auto">Sistema</option>
+          <option value="light">Claro</option>
+          <option value="dark">Oscuro</option>
+        </select>
+      </label>
 
       <label style={{ display: "block", marginBottom: 12 }}>
         <span>Nombre a escribir</span>
@@ -37,6 +63,7 @@ export function App() {
 
       <SignatureField
         name={name}
+        {...(theme === "auto" ? {} : { theme })}
         onSignature={(next) => {
           setSignature(next);
           setRejection(null);

@@ -136,6 +136,16 @@ describe("<SignatureField />", () => {
     expect(onRejection).not.toHaveBeenCalled();
   });
 
+  it("renders the theme attribute the stylesheet keys on", () => {
+    // La hoja pinta su propia superficie según `data-theme`; si el atributo no
+    // llega al DOM, en un esquema oscuro el texto queda blanco sobre blanco.
+    const { container, unmount } = render(<SignatureField theme="dark" />);
+    expect(container.querySelector(".signature")?.getAttribute("data-theme")).toBe("dark");
+    unmount();
+    const segundo = render(<SignatureField />);
+    expect(segundo.container.querySelector(".signature")?.hasAttribute("data-theme")).toBe(false);
+  });
+
   it("returns the rejection message in the requested language", async () => {
     const onRejection = vi.fn();
     render(
