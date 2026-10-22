@@ -8,7 +8,7 @@
 import { scaleToMaxSide, scaleToWidth } from "./image.js";
 import { rejectionMessage } from "./messages/index.js";
 import {
-  rasterizeStroke,
+  rasterizeStrokes,
   type StrokeOptions,
   type StrokePoint,
 } from "./modes/draw.js";
@@ -37,7 +37,11 @@ export type SignatureInput =
   | { mode: "camera"; image: Bitmap }
   | {
       mode: "draw";
-      points: StrokePoint[];
+      /**
+       * Un trazo por elemento. Aplanarlos en una sola lista pintaría una línea entre
+       * el final de un trazo y el principio del siguiente.
+       */
+      strokes: StrokePoint[][];
       canvas: { width: number; height: number };
       /** Grosor, suavizado y color del trazo. Sin esto, los del paquete. */
       stroke?: StrokeOptions;
@@ -110,7 +114,7 @@ export async function sign(
   } else {
     let rendered: Bitmap;
     if (input.mode === "draw") {
-      rendered = rasterizeStroke(input.points, input.canvas, input.stroke ?? {});
+      rendered = rasterizeStrokes(input.strokes, input.canvas, input.stroke ?? {});
     } else {
       const layout = layoutTypedName(
         input.text,

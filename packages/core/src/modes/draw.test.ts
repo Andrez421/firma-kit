@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { Bitmap } from "../types.js";
 import {
   rasterizeStroke,
+  rasterizeStrokes,
   smoothStroke,
   strokeWidths,
   type StrokePoint,
@@ -114,5 +115,45 @@ describe("smoothStroke", () => {
   it("con menos de tres puntos devuelve el mismo trazo", () => {
     const dos = zigzag.slice(0, 2);
     expect(smoothStroke(dos)).toEqual(dos);
+  });
+});
+
+describe("varios trazos en un mismo lienzo", () => {
+  const lienzo = { width: 200, height: 120 };
+  const trazo = (y: number) => [
+    { x: 20, y, t: 0 },
+    { x: 60, y, t: 20 },
+  ];
+
+  /** ¿Hay tinta en la franja entre dos trazos horizontales? */
+  const tintaEnElMedio = (bitmap: { data: Uint8ClampedArray; width: number }) => {
+    for (let x = 30; x < 50; x++) {
+      const i = (60 * bitmap.width + x) * 4;
+      if (bitmap.data[i]! < 200) return true;
+    }
+    return false;
+  };
+
+  it("no une el final de un trazo con el principio del siguiente", () => {
+    const bitmap = rasterizeStrokes([trazo(20), trazo(100)], lienzo);
+    // Entre los dos trazos (y ≈ 60) no debe haber tinta: el dedo se levantó.
+    expect(tintaEnElMedio(bitmap)).toBe(false);
+    // Pero cada trazo sí está pintado.
+    const arriba = (20 * bitmap.width + 40) * 4;
+    const abajo = (100 * bitmap.width + 40) * 4;
+    expect(bitmap.data[arriba]!).toBeLessThan(80);
+    expect(bitmap.data[abajo]!).toBeLessThan(80);
+  });
+
+  it("un trazo aplanado sí pintaría la unión, que es el defecto que se corrige", () => {
+    const aplanado = rasterizeStroke([...trazo(20), ...trazo(100)], lienzo);
+    expect(tintaEnElMedio(aplanado)).toBe(true);
+  });
+
+  it("un solo trazo da el mismo resultado por las dos vías", () => {
+    const puntos = trazo(40);
+    expect(rasterizeStrokes([puntos], lienzo).data).toEqual(
+      rasterizeStroke(puntos, lienzo).data
+    );
   });
 });

@@ -93,37 +93,44 @@ export function strokeWidths(
 }
 
 /**
- * Pinta el stroke en un canvas opaco blanco. La coverage es la distancia a la
- * cápsula del segment, así que el borde remaining smoothed sin depender de canvas.
+ * Pinta varios trazos en un canvas opaco blanco. La coverage es la distancia a la
+ * cápsula de cada segmento, así que el borde queda suavizado sin depender de canvas.
+ *
+ * Los trazos se recorren por separado a propósito: unirlos en una sola lista de
+ * puntos pintaría un segmento entre el final de uno y el principio del siguiente, que
+ * es justo lo que no debe pasar al levantar el lápiz.
  */
-export function rasterizeStroke(
-  points: StrokePoint[],
+export function rasterizeStrokes(
+  strokes: StrokePoint[][],
   size: { width: number; height: number },
   options: StrokeOptions = {}
 ): Bitmap {
   const { width, height } = size;
   const data = new Uint8ClampedArray(width * height * 4).fill(255);
-  if (points.length < 2 || width <= 0 || height <= 0) {
+  if (width <= 0 || height <= 0) {
     return { data, width, height };
   }
 
-  const smoothed = smoothStroke(points, options);
-  const widths = strokeWidths(smoothed, options);
   const coverage = new Float32Array(width * height);
-  for (let i = 1; i < smoothed.length; i++) {
-    const a = smoothed[i - 1]!;
-    const b = smoothed[i]!;
-    segment(
-      coverage,
-      width,
-      height,
-      a.x,
-      a.y,
-      b.x,
-      b.y,
-      widths[i - 1]! / 2,
-      widths[i]! / 2
-    );
+  for (const points of strokes) {
+    if (points.length < 2) continue;
+    const smoothed = smoothStroke(points, options);
+    const widths = strokeWidths(smoothed, options);
+    for (let i = 1; i < smoothed.length; i++) {
+      const a = smoothed[i - 1]!;
+      const b = smoothed[i]!;
+      segment(
+        coverage,
+        width,
+        height,
+        a.x,
+        a.y,
+        b.x,
+        b.y,
+        widths[i - 1]! / 2,
+        widths[i]! / 2
+      );
+    }
   }
 
   const ink = options.ink ?? 0;
@@ -137,6 +144,15 @@ export function rasterizeStroke(
     data[o + 2] = v;
   }
   return { data, width, height };
+}
+
+/** Pinta un solo trazo. Atajo de `rasterizeStrokes` para no envolver en un array. */
+export function rasterizeStroke(
+  points: StrokePoint[],
+  size: { width: number; height: number },
+  options: StrokeOptions = {}
+): Bitmap {
+  return rasterizeStrokes([points], size, options);
 }
 
 function segment(
