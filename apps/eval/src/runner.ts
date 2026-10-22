@@ -7,6 +7,7 @@
 import type { Bitmap, Verifier } from "@firma-kit/core";
 
 import type { Budgets, CorpusEntry } from "./manifest.js";
+import { muestrasParaCeroErrores, wilson, type Intervalo } from "./stats.js";
 
 export type EvalCase = CorpusEntry;
 
@@ -26,8 +27,18 @@ export type EvalReport = {
   falsePositives: number;
   /** Falsos rechazos sobre firmas: la métrica que no se negocia. */
   falseRejectionRate: number;
-  /** Falsos aceptados sobre negativos. */
+  /** Negativos aceptados por error, sobre el total de negativos. */
   falseAcceptRate: number;
+  /** Negativos rechazados correctamente, sobre el total de negativos. */
+  negativeAccuracy: number;
+  /** Intervalo al 95 % de los falsos rechazos: sin esto el punto engaña. */
+  falseRejectionInterval: Intervalo;
+  /** Intervalo al 95 % de los falsos aceptados. */
+  falseAcceptInterval: Intervalo;
+  /** Intervalo al 95 % del acierto sobre negativos. */
+  negativeAccuracyInterval: Intervalo;
+  /** Positivos que harían falta para afirmar el presupuesto con cero errores. */
+  positivesNeeded: number;
   latencyMs: { p50: number; p95: number; max: number };
   failures: Array<{ path: string; label: string; verdict: boolean }>;
   passed: boolean;
@@ -99,7 +110,8 @@ export async function runEval(opciones: RunEvalOptions): Promise<EvalReport> {
   }
 
   const falseRejectionRate = falseNegatives / Math.max(1, positivos);
-  const falseAcceptRate = trueNegatives / Math.max(1, negativos);
+  const falseAcceptRate = falsePositives / Math.max(1, negativos);
+  const negativeAccuracy = trueNegatives / Math.max(1, negativos);
 
   const reasons: string[] = [];
   if (falseRejectionRate > budgets.maxFalseRejectionRate) {
@@ -107,9 +119,9 @@ export async function runEval(opciones: RunEvalOptions): Promise<EvalReport> {
       `falsos rechazos ${(falseRejectionRate * 100).toFixed(1)} % > ${(budgets.maxFalseRejectionRate * 100).toFixed(0)} %`
     );
   }
-  if (falseAcceptRate < budgets.minFalseAcceptRate) {
+  if (negativeAccuracy < budgets.minNegativeAccuracy) {
     reasons.push(
-      `falsos aceptados ${(falseAcceptRate * 100).toFixed(1)} % < ${(budgets.minFalseAcceptRate * 100).toFixed(0)} %`
+      `solo se rechaza ${(negativeAccuracy * 100).toFixed(1)} % de los negativos (mínimo ${(budgets.minNegativeAccuracy * 100).toFixed(0)} %)`
     );
   }
 
@@ -131,6 +143,11 @@ export async function runEval(opciones: RunEvalOptions): Promise<EvalReport> {
     falsePositives,
     falseRejectionRate,
     falseAcceptRate,
+    negativeAccuracy,
+    falseRejectionInterval: wilson(falseNegatives, positivos),
+    falseAcceptInterval: wilson(falsePositives, negativos),
+    negativeAccuracyInterval: wilson(trueNegatives, negativos),
+    positivesNeeded: muestrasParaCeroErrores(budgets.maxFalseRejectionRate),
     latencyMs: {
       p50: percentil(latencias, 0.5),
       p95: percentil(latencias, 0.95),
@@ -153,9 +170,11 @@ export function formatReport(report: EvalReport): string {
     report.sensitive ? `marcadas como sensibles: ${report.sensitive}` : "",
     `casos: ${report.total}`,
     `matriz: VP ${report.truePositives} · FN ${report.falseNegatives} · VN ${report.trueNegatives} · FP ${report.falsePositives}`,
-    `falsos rechazos: ${pct(report.falseRejectionRate)}`,
-    `falsos aceptados: ${pct(report.falseAcceptRate)}`,
+    `falsos rechazos: ${pct(report.falseRejectionRate)} (95 % CI ${pct(report.falseRejectionInterval.lower)}–${pct(report.falseRejectionInterval.upper)})`,
+    `negativos aceptados por error: ${pct(report.falseAcceptRate)} (95 % CI ${pct(report.falseAcceptInterval.lower)}–${pct(report.falseAcceptInterval.upper)})`,
+    `negativos rechazados correctamente: ${pct(report.negativeAccuracy)} (95 % CI ${pct(report.negativeAccuracyInterval.lower)}–${pct(report.negativeAccuracyInterval.upper)})`,
     `latencia: p50 ${report.latencyMs.p50} ms · p95 ${report.latencyMs.p95} ms · max ${report.latencyMs.max} ms`,
+    `positivos necesarios para afirmar el presupuesto de falsos rechazos con cero errores: ${report.positivesNeeded}`,
     report.passed ? "RESULTADO: pasa" : `RESULTADO: ${report.evidence ? "falla" : "no concluyente"} — ${report.reasons.join("; ")}`,
   ]
     .filter(Boolean)

@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc -p tsconfig.json --outDir dist --noEmit false",
     "eval": "pnpm build && node dist/run.js",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "gen:negatives": "node scripts/generate-synthetic-negatives.mjs"
   },
   "dependencies": {
     "@firma-kit/core": "workspace:*",

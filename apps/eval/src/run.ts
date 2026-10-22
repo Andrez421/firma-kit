@@ -61,7 +61,16 @@ const verifierName = usarBaseline ? "baseline-ink" : "two-tier";
 const manifiesto = JSON.parse(
   await readFile(path.join(corpus, "manifest.json"), "utf8")
 ) as unknown;
-const casos: CorpusEntry[] = parseManifest(manifiesto);
+const todos: CorpusEntry[] = parseManifest(manifiesto);
+// `--licensed-only` mide solo con material de licencia conocida: es la única
+// parte que puede citarse como evidencia.
+const soloLicencias = process.argv.includes("--licensed-only");
+const casos = soloLicencias
+  ? todos.filter((caso) => caso.source !== "web-unverified")
+  : todos;
+if (soloLicencias) {
+  console.log(`modo licencias: ${casos.length} de ${todos.length} imágenes tienen licencia conocida`);
+}
 const report = await runEval({
   cases: casos,
   verifier,

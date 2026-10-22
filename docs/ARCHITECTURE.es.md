@@ -79,4 +79,4 @@ umbrales hace falta un lote de negativos (cédula, factura, recibo, pantallazo,
 objeto, mano, hoja vacía): **30–50** mínimo. Métricas:
 
 - falsos rechazos sobre firmas reales **≤ 1–2 %** (no negociable);
-- falsos aceptados sobre negativos **≥ 90 %**.
+- negativos rechazados correctamente **≥ 90 %** (la redacción anterior, «falsos aceptados ≥ 90 %», decía lo contrario).
