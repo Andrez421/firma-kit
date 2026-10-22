@@ -105,7 +105,11 @@ const FIELD_TEXT: Record<Locale, FieldText> = {
 
 const MODE_ORDER: SignatureMode[] = ["draw", "type", "upload", "camera"];
 
-/** Lienzo de trabajo de dibujar y escribir, en píxeles CSS. */
+/**
+ * Lienzo de trabajo de dibujar y escribir, en píxeles CSS. El alto visible lo
+ * controla `--signature-canvas-height`; este es el tamaño del bitmap de la firma,
+ * que no depende del tamaño del campo.
+ */
 const CANVAS_SIZE = { width: 600, height: 200 };
 
 export type SignatureFieldProps = {
@@ -133,6 +137,11 @@ export type SignatureFieldProps = {
    * navegador sufre decodificando y la foto de una firma no lo necesita.
    */
   maxBytes?: number;
+  /**
+   * Tamaño del campo: cambia el lienzo y el aire, nunca los objetivos táctiles,
+   * que siguen en 44px como mínimo.
+   */
+  size?: "sm" | "md" | "lg";
   /** Cursivas ofrecidas en el modo escribir. Por defecto, las cuatro del paquete. */
   fonts?: TypeFont[];
   /** Cursiva elegida (modo controlado). */
@@ -140,6 +149,11 @@ export type SignatureFieldProps = {
   onFontChange?: (font: TypeFont) => void;
   label?: string;
   className?: string;
+  /**
+   * Estilos en línea del contenedor. Es la vía corta para sobrescribir tokens
+   * (`--signature-*`) sin crear una hoja de estilos propia.
+   */
+  style?: React.CSSProperties;
   /** Puertos inyectables: pruebas sin canvas real. */
   encoder?: PngEncoder;
   measurer?: TextMeasurer;
@@ -207,11 +221,13 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       label,
       locale = "en",
       maxBytes = 5 * 1024 * 1024,
+      size = "md",
       theme,
       fonts = [...TYPE_FONTS],
       font,
       onFontChange,
       className,
+      style,
       encoder,
       measurer,
       rasterizer,
@@ -455,6 +471,8 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       <div
         className={className ? `signature ${className}` : "signature"}
         data-theme={theme}
+        data-size={size}
+        style={style}
       >
         <div className="signature__tabs" role="tablist" aria-label={label ?? (locale === "es" ? "Firma" : "Signature")}>
           {available.map((availableMode) => {

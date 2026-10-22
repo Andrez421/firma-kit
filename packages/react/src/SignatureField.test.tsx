@@ -361,6 +361,27 @@ describe("<SignatureField />", () => {
     expect(elegida?.getAttribute("value")).toBe("Great Vibes");
   });
 
+  it("exposes the size the stylesheet keys on, with md as default", () => {
+    const { container, unmount } = render(<SignatureField size="lg" />);
+    expect(container.querySelector(".signature")?.getAttribute("data-size")).toBe("lg");
+    unmount();
+    const porDefecto = render(<SignatureField />);
+    expect(
+      porDefecto.container.querySelector(".signature")?.getAttribute("data-size")
+    ).toBe("md");
+  });
+
+  it("lets the host override the theme tokens inline", () => {
+    // La vía corta de personalización: pasar los tokens como estilo del campo.
+    const { container } = render(
+      <SignatureField
+        style={{ "--signature-focus": "#7c3aed" } as React.CSSProperties}
+      />
+    );
+    const raiz = container.querySelector(".signature") as HTMLElement;
+    expect(raiz.style.getPropertyValue("--signature-focus")).toBe("#7c3aed");
+  });
+
   it("renders the theme attribute the stylesheet keys on", () => {
     // La hoja pinta su propia superficie según `data-theme`; si el atributo no
     // llega al DOM, en un esquema oscuro el texto queda blanco sobre blanco.
