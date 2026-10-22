@@ -126,7 +126,7 @@ describe("varios trazos en un mismo lienzo", () => {
   ];
 
   /** ¿Hay tinta en la franja entre dos trazos horizontales? */
-  const tintaEnElMedio = (bitmap: { data: Uint8ClampedArray; width: number }) => {
+  const tintaEnElMedio = (bitmap: Bitmap) => {
     for (let x = 30; x < 50; x++) {
       const i = (60 * bitmap.width + x) * 4;
       if (bitmap.data[i]! < 200) return true;
