@@ -1,5 +1,6 @@
-/* Estilos del demo. El componente trae los suyos (`firma-kit.css`); aquí solo está
-   la página que lo contiene, con la misma idea: papel, tinta y un solo acento. */
+/* Estilos del demo. El componente trae los suyos (`firma-kit.css`); aquí está la
+   página que lo contiene y los efectos que un preset necesita y una variable CSS no
+   puede expresar (degradados, brillos). */
 
 :root {
   --paper: #f6f3ea;
@@ -9,6 +10,17 @@
   --rule: #d9d2c0;
   --accent: #c8372d;
   --radius: 4px;
+  --shadow: 0 1px 2px rgb(23 21 15 / 6%);
+}
+
+[data-theme="dark"] {
+  --paper: #101114;
+  --paper-raised: #17191d;
+  --ink: #f2efe6;
+  --ink-soft: #a4a199;
+  --rule: #2b2e34;
+  --accent: #f2635a;
+  --shadow: 0 1px 2px rgb(0 0 0 / 40%);
 }
 
 * {
@@ -26,21 +38,25 @@ body {
   color: var(--ink);
   font-family: ui-serif, Georgia, "Times New Roman", serif;
   line-height: 1.55;
+  transition: background 160ms ease, color 160ms ease;
 }
 
 main {
   margin: 0 auto;
-  max-width: 960px;
-  padding: 48px 24px 96px;
+  max-width: 1280px;
+  padding: 40px 24px 96px;
 }
 
+/* --- cabecera ------------------------------------------------------------ */
+
 header.demo-header {
+  align-items: start;
   border-bottom: 1px solid var(--rule);
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 20px;
   justify-content: space-between;
-  padding-bottom: 16px;
+  padding-bottom: 20px;
 }
 
 h1 {
@@ -51,22 +67,27 @@ h1 {
 }
 
 h2 {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 600;
-  margin: 40px 0 12px;
-}
-
-p {
-  margin: 8px 0;
+  letter-spacing: 0.01em;
+  margin: 32px 0 10px;
+  text-transform: uppercase;
 }
 
 .lede {
   color: var(--ink-soft);
-  max-width: 60ch;
+  max-width: 62ch;
+  margin: 8px 0 0;
+}
+
+.header-actions {
+  align-items: center;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
 }
 
 .pill {
-  align-self: center;
   border: 1px solid var(--rule);
   border-radius: 999px;
   color: var(--ink-soft);
@@ -81,22 +102,184 @@ p {
   color: var(--accent);
 }
 
-.controls {
-  align-items: end;
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin: 24px 0;
+.ghost-button,
+.segmented button,
+.demo-button {
+  align-items: center;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  color: var(--ink);
+  cursor: pointer;
+  display: inline-flex;
+  font: inherit;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 14px;
+  text-decoration: none;
 }
 
-.controls label {
+.ghost-button,
+.segmented,
+.demo-button {
+  border-radius: var(--radius);
+}
+
+.ghost-button:hover,
+.demo-button:hover,
+.segmented button:hover {
+  border-color: var(--ink-soft);
+}
+
+.segmented {
+  display: inline-flex;
+  overflow: hidden;
+}
+
+.segmented button {
+  border: 0;
+  border-radius: 0;
+  min-height: 38px;
+}
+
+.segmented button + button {
+  border-left: 1px solid var(--rule);
+}
+
+.segmented button[aria-pressed="true"] {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+/* --- disposición --------------------------------------------------------- */
+
+.layout {
+  display: grid;
+  gap: 40px;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  margin-top: 28px;
+}
+
+.column {
+  min-width: 0;
+}
+
+/* La vista previa acompaña al panel mientras se baja: cambiar una opción y no ver el
+   resultado sin volver a subir es la mitad del trabajo. */
+@media (min-width: 961px) {
+  .layout > .column:first-child {
+    align-self: start;
+    position: sticky;
+    top: 24px;
+  }
+}
+
+.sheet-note {
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin-top: 10px;
+}
+
+.panel-column {
+  border-left: 1px solid var(--rule);
+  padding-left: 40px;
+}
+
+@media (max-width: 960px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .panel-column {
+    border-left: 0;
+    border-top: 1px solid var(--rule);
+    padding-left: 0;
+    padding-top: 24px;
+  }
+}
+
+/* --- panel de opciones --------------------------------------------------- */
+
+.panel section {
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 20px;
+}
+
+.panel section:last-child {
+  border-bottom: 0;
+}
+
+.hint {
+  color: var(--ink-soft);
+  font-size: 13px;
+  margin: 4px 0 12px;
+}
+
+.presets {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(132px, 1fr));
+  margin-bottom: 16px;
+}
+
+.preset {
+  align-items: center;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  color: var(--ink);
+  cursor: pointer;
+  display: flex;
+  font: inherit;
+  font-size: 13px;
+  gap: 10px;
+  padding: 8px 10px;
+  text-align: left;
+}
+
+.preset[data-active="true"] {
+  border-color: var(--accent);
+  box-shadow: inset 0 0 0 1px var(--accent);
+}
+
+.swatch {
+  border: 1px solid;
+  border-radius: 3px;
+  display: block;
+  height: 24px;
+  position: relative;
+  width: 24px;
+}
+
+.swatch-ink {
+  border-radius: 999px;
+  bottom: 3px;
+  height: 6px;
+  position: absolute;
+  right: 3px;
+  width: 14px;
+}
+
+.field {
   display: flex;
   flex-direction: column;
   font-size: 13px;
   gap: 6px;
+  margin-top: 12px;
 }
 
-.controls select {
+.field.range span {
+  display: flex;
+  justify-content: space-between;
+}
+
+.field.range b {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-weight: 500;
+}
+
+.field select,
+.field input[type="text"],
+.field input[type="number"] {
   background: var(--paper-raised);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
@@ -106,30 +289,74 @@ p {
   padding: 6px 10px;
 }
 
-button.demo-button {
+.field input[type="range"] {
+  accent-color: var(--accent);
+  width: 100%;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.row > .field {
+  flex: 1 1 140px;
+  margin-top: 0;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.chip {
+  align-items: center;
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 13px;
+  gap: 8px;
+  min-height: 36px;
+  padding: 4px 14px;
+  user-select: none;
+}
+
+.chip[data-active="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.chip input {
+  accent-color: var(--accent);
+}
+
+.props {
   background: var(--paper-raised);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
-  color: var(--ink);
-  cursor: pointer;
-  font: inherit;
-  min-height: 40px;
-  padding: 8px 16px;
+  font-size: 12px;
+  margin: 0 0 12px;
+  max-height: 320px;
+  overflow: auto;
+  padding: 14px;
 }
 
-button.demo-button:hover {
-  border-color: var(--ink-soft);
-}
+/* --- resultado y notas --------------------------------------------------- */
 
 .result {
   align-items: start;
   background: var(--paper-raised);
   border: 1px solid var(--rule);
   border-radius: var(--radius);
+  box-shadow: var(--shadow);
   display: flex;
   flex-wrap: wrap;
   gap: 24px;
-  margin-top: 24px;
   padding: 20px;
 }
 
@@ -137,7 +364,7 @@ button.demo-button:hover {
   background: #fff;
   border: 1px solid var(--rule);
   max-width: 100%;
-  width: 320px;
+  width: 300px;
 }
 
 .result dl {
@@ -161,14 +388,14 @@ button.demo-button:hover {
   border-left: 2px solid var(--accent);
   color: var(--ink-soft);
   font-size: 14px;
-  margin-top: 20px;
+  margin-top: 16px;
   padding-left: 12px;
 }
 
 .empty {
   color: var(--ink-soft);
   font-size: 14px;
-  margin-top: 24px;
+  margin-top: 20px;
 }
 
 pre {
@@ -186,4 +413,25 @@ code {
 
 a {
   color: var(--accent);
+}
+
+/* --- efectos de preset: lo que una variable CSS no puede expresar -------- */
+
+.preset-gradient .signature__canvas-wrap {
+  background-image: linear-gradient(135deg, #ffffff 0%, #f3ecff 55%, #e8f0ff 100%);
+  box-shadow: 0 18px 40px -24px rgb(124 58 237 / 55%);
+}
+
+.preset-gradient .signature__panel {
+  background: transparent;
+}
+
+.preset-glow .signature__canvas-wrap {
+  box-shadow:
+    0 0 0 1px rgb(34 211 238 / 35%),
+    0 18px 60px -30px rgb(34 211 238 / 70%);
+}
+
+.preset-glow .signature__panel {
+  background: transparent;
 }
