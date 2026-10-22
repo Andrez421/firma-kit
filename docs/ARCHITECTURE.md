@@ -62,7 +62,7 @@ Two tiers, **both on CPU**, the image never leaves the caller's infrastructure:
 | Tier | Model | Size | Latency | Role |
 | --- | --- | --- | --- | --- |
 | 1 | MobileCLIP-S0 int8 (zero-shot image↔text) | budget ~90 MB | ~50 ms | gate: is the winning class "handwritten signature"? |
-| 2 | SmolVLM-256M GGUF Q4 | ~300 MB | ~1–2 s | second opinion only when tier 1 is ambiguous |
+| 2 | SmolVLM-256M GGUF Q8_0 | ~270 MB | ~1–2 s | second opinion only when tier 1 is ambiguous |
 
 The published int8 ONNX weights measure ≈55 MB (`vision_model_int8` 11.8 MB +
 `text_model_int8` 42.8 MB); the tier-1 budget is reconciled when phase 3 sizes the
