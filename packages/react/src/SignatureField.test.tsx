@@ -49,6 +49,25 @@ const measurer = {
   }),
 };
 
+
+// jsdom devuelve un rect de 0×0 y no implementa la captura de puntero: sin esto
+// no hay coordenadas y los tests de trazo no probarían nada.
+function prepararLienzo(container: HTMLElement): HTMLCanvasElement {
+  const lienzo = container.querySelector("canvas")!;
+  vi.spyOn(lienzo, "getBoundingClientRect").mockReturnValue({
+    left: 0, top: 0, width: 600, height: 200, right: 600, bottom: 200, x: 0, y: 0,
+    toJSON: () => ({}),
+  } as DOMRect);
+  Object.assign(lienzo, { setPointerCapture: () => {}, releasePointerCapture: () => {} });
+  return lienzo;
+}
+
+function trazar(lienzo: HTMLCanvasElement, x: number, y: number, id = 1): void {
+  fireEvent.pointerDown(lienzo, { clientX: x, clientY: y, pointerId: id });
+  fireEvent.pointerMove(lienzo, { clientX: x + 12, clientY: y + 6, pointerId: id });
+  fireEvent.pointerUp(lienzo, { pointerId: id });
+}
+
 describe("availableModes", () => {
   it("hides type without a name but keeps the camera", () => {
     // La cámara se ofrece siempre: en escritorio el input `capture` degrada a
@@ -239,6 +258,71 @@ describe("<SignatureField />", () => {
     expect(deshacer.disabled).toBe(false);
     fireEvent.click(deshacer);
     expect(deshacer.disabled).toBe(true);
+  });
+
+  it("redoes what was undone and forgets the stack after a new stroke", () => {
+    const { container } = render(<SignatureField />);
+    const lienzo = prepararLienzo(container);
+    const rehacer = screen.getByRole("button", { name: "Redo" }) as HTMLButtonElement;
+    const deshacer = screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement;
+
+    trazar(lienzo, 20, 100);
+    trazar(lienzo, 120, 140);
+    expect(rehacer.disabled).toBe(true);
+
+    fireEvent.click(deshacer);
+    expect(rehacer.disabled).toBe(false);
+
+    fireEvent.click(rehacer);
+    // La pila se consumió y el trazo volvió.
+    expect(rehacer.disabled).toBe(true);
+    expect(deshacer.disabled).toBe(false);
+
+    fireEvent.click(deshacer);
+    trazar(lienzo, 200, 60);
+    // Un trazo nuevo invalida lo que había para rehacer.
+    expect(rehacer.disabled).toBe(true);
+  });
+
+  it("erases the stroke under the pointer and lets it be redone", () => {
+    const { container } = render(<SignatureField />);
+    const lienzo = prepararLienzo(container);
+    const deshacer = screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement;
+    trazar(lienzo, 30, 100, 1);
+    trazar(lienzo, 300, 120, 2);
+    expect(deshacer.disabled).toBe(false);
+
+    const borrador = screen.getByRole("button", { name: "Erase" });
+    fireEvent.click(borrador);
+    expect(borrador.getAttribute("aria-pressed")).toBe("true");
+    // El puntero toca el segundo trazo y lo borra; el primero queda.
+    fireEvent.pointerDown(lienzo, { clientX: 306, clientY: 123, pointerId: 3 });
+    fireEvent.pointerUp(lienzo, { pointerId: 3 });
+
+    const rehacer = screen.getByRole("button", { name: "Redo" }) as HTMLButtonElement;
+    expect(rehacer.disabled).toBe(false);
+    fireEvent.click(rehacer);
+    expect(rehacer.disabled).toBe(true);
+  });
+
+  it("offers full screen and marks the tools it toggles", () => {
+    const { container } = render(<SignatureField />);
+    const pantalla = screen.getByRole("button", { name: "Full screen" });
+    expect(pantalla.getAttribute("aria-pressed")).toBe("false");
+    fireEvent.click(pantalla);
+    expect(pantalla.getAttribute("aria-pressed")).toBe("true");
+    expect(
+      container.querySelector(".signature__canvas-wrap--expanded")
+    ).not.toBeNull();
+    // La salida vive dentro del overlay, donde el pulgar la alcanza.
+    fireEvent.click(screen.getByRole("button", { name: "Exit full screen" }));
+    expect(container.querySelector(".signature__canvas-wrap--expanded")).toBeNull();
+    expect(pantalla.getAttribute("aria-pressed")).toBe("false");
+  });
+
+  it("shows the signing line while drawing", () => {
+    const { container } = render(<SignatureField />);
+    expect(container.querySelector(".signature__baseline")).not.toBeNull();
   });
 
   it("shows the generated signature with its size", async () => {
