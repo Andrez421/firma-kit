@@ -678,3 +678,40 @@ describe("barra de acciones", () => {
     ]);
   });
 });
+
+describe("modo escribir y cámara", () => {
+  const lineas = (container: HTMLElement, etiqueta: string) =>
+    within(container).getByLabelText(etiqueta) as HTMLInputElement;
+
+  it("sigue la prop maxLines cuando el padre la cambia", () => {
+    // Antes la prop solo se leía al montar: un panel que la cambiara no hacía nada.
+    const { container, rerender } = render(
+      <SignatureField name="María" modes={["type"]} maxLines={2} />
+    );
+    expect(lineas(container, "Two lines").checked).toBe(true);
+
+    rerender(<SignatureField name="María" modes={["type"]} maxLines={1} />);
+    expect(lineas(container, "One line").checked).toBe(true);
+  });
+
+  it("dice «Open camera» en vez del texto del sistema para elegir archivo", () => {
+    const { container } = render(<SignatureField modes={["camera"]} />);
+    expect(screen.getByText("Open camera")).toBeDefined();
+    expect(screen.getByText(/on a phone this opens the camera/i)).toBeDefined();
+    // El input sigue ahí —es el que abre la cámara—, pero no lleva texto propio.
+    const input = container.querySelector<HTMLInputElement>(".signature__file input");
+    expect(input?.type).toBe("file");
+  });
+
+  it("traduce la cámara al español", () => {
+    render(<SignatureField modes={["camera"]} locale="es" />);
+    expect(screen.getByText("Abrir cámara")).toBeDefined();
+    expect(screen.getByText(/abre la cámara/i)).toBeDefined();
+  });
+
+  it("muestra las cursivas para que quepan en una fila", () => {
+    render(<SignatureField name="María" modes={["type"]} />);
+    expect(screen.getByLabelText("Handwriting style")).toBeDefined();
+    expect(screen.getAllByRole("radio").length).toBeGreaterThanOrEqual(4);
+  });
+});

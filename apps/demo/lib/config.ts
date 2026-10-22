@@ -49,7 +49,8 @@ export const DEFAULT_CONFIG: DemoConfig = {
   fieldTheme: "auto",
   modes: ALL_MODES,
   initialMode: "draw",
-  maxLines: 2,
+  // Una línea por defecto: es lo que pide casi todo el mundo y cabe sin apretar.
+  maxLines: 1,
   font: "Caveat",
   maxBytesKb: 5120,
   // Con un nombre por defecto se ven los cuatro modos al abrir la página; borrarlo

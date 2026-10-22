@@ -1,3 +1,9 @@
+/* Las cuatro cursivas vienen incluidas: quien importa este archivo no tiene que
+ * acordarse de un segundo import para que el modo escribir se vea bien. Sin esto, el
+ * navegador mide con la fuente de reserva y el nombre se sale de la hoja.
+ * `fonts.css` sigue existiendo como entrada propia para quien traiga sus fuentes. */
+@import "./assets/fonts.css";
+
 /* Estilos de <SignatureField /> — mundo: «la impresión».
  *
  * Firmar no es trazar una línea: es estampar una marca que compromete. De ahí el
@@ -276,8 +282,12 @@
 /* Cursivas: muestras sobre hairline; la activa se marca con el bloque. */
 .signature__font-options {
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+  flex-wrap: nowrap;
+  gap: 6px;
+  /* Las cuatro cursivas caben en una fila; si el ancho es menor, se desplazan en
+     horizontal en vez de romper la fila y empujar el lienzo hacia abajo. */
+  overflow-x: auto;
+  padding-bottom: 2px;
 }
 
 .signature__font {
@@ -286,10 +296,11 @@
   border-radius: var(--signature-radius);
   cursor: pointer;
   display: inline-flex;
-  font-size: 1.5rem;
-  gap: 10px;
+  flex: 0 0 auto;
+  font-size: 1.05rem;
+  gap: 6px;
   min-height: 44px;
-  padding: 8px 14px;
+  padding: 6px 10px;
 }
 
 .signature__font:hover {
@@ -348,9 +359,39 @@
   padding: 18px;
 }
 
+/* El input nativo se oculta sin sacarlo de la accesibilidad ni del teclado: sigue
+   siendo el que abre la cámara, pero el disparador visible y traducido es la etiqueta. */
 .signature__file input {
-  font: inherit;
-  min-height: 44px;
+  clip-path: inset(50%);
+  height: 1px;
+  overflow: hidden;
+  position: absolute;
+  white-space: nowrap;
+  width: 1px;
+}
+
+.signature__file {
+  cursor: pointer;
+  position: relative;
+}
+
+.signature__file:hover {
+  border-color: var(--signature-rule);
+}
+
+.signature__file:focus-within {
+  outline: 2px solid var(--signature-focus);
+  outline-offset: 2px;
+}
+
+.signature__file-title {
+  font-weight: 600;
+}
+
+.signature__file-hint {
+  color: var(--signature-muted);
+  font-size: 0.85rem;
+  text-align: center;
 }
 
 .signature__actions {

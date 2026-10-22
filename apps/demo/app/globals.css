@@ -472,6 +472,50 @@ a {
   color: var(--accent);
 }
 
+/* --- modal de rechazo --------------------------------------------------- */
+
+.dialog-backdrop {
+  align-items: center;
+  background: rgb(10 10 12 / 55%);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 24px;
+  position: fixed;
+  z-index: 50;
+}
+
+.dialog {
+  background: var(--paper-raised);
+  border: 1px solid var(--rule);
+  border-left: 4px solid var(--accent);
+  border-radius: var(--radius);
+  box-shadow: 0 24px 60px -24px rgb(0 0 0 / 45%);
+  max-width: 480px;
+  padding: 24px;
+  width: 100%;
+}
+
+/* Con el modal abierto, el aviso interno del campo repetiría el mismo texto: se
+   oculta mientras dura el diálogo, que además lo anuncia como `aria-modal`. */
+.demo-modal-open .signature__error {
+  display: none;
+}
+
+.dialog-eyebrow {
+  color: var(--accent);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  margin: 0 0 8px;
+  text-transform: uppercase;
+}
+
+.dialog-body {
+  color: var(--ink);
+  margin: 0 0 20px;
+}
+
 /* --- efectos de preset: lo que una variable CSS no puede expresar -------- */
 
 .preset-gradient .signature__canvas-wrap {
@@ -490,5 +534,23 @@ a {
 }
 
 .preset-glow .signature__panel {
+  background: transparent;
+}
+
+.preset-slate .signature__canvas-wrap {
+  box-shadow: inset 0 0 60px rgb(0 0 0 / 45%);
+}
+
+.preset-slate .signature__panel {
+  background: transparent;
+}
+
+.preset-watercolour .signature__canvas-wrap {
+  background-image: radial-gradient(circle at 20% 20%, #eef2ff 0%, transparent 55%),
+    radial-gradient(circle at 80% 70%, #fdf2f8 0%, transparent 55%);
+  box-shadow: 0 20px 45px -30px rgb(99 102 241 / 55%);
+}
+
+.preset-watercolour .signature__panel {
   background: transparent;
 }
