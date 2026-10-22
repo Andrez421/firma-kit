@@ -25,7 +25,7 @@ export type TextStyle = { family: string; size: number };
 
 /** Puerto de medida: en el navegador mide canvas con la fuente ya cargada. */
 export type TextMeasurer = {
-  measure: (texto: string, style: TextStyle) => { width: number; height: number };
+  measure: (text: string, style: TextStyle) => { width: number; height: number };
 };
 
 /**
@@ -97,12 +97,12 @@ function wrap(
  * dato que este módulo pueda pedir que se acorte.
  */
 export function layoutTypedName(
-  texto: string,
+  text: string,
   bounds: { width: number; height: number },
   measurer: TextMeasurer,
   options: TypeOptions = {}
 ): TypeLayout | null {
-  const cleanName = texto.replace(/\s+/g, " ").trim();
+  const cleanName = text.replace(/\s+/g, " ").trim();
   if (!cleanName) return null;
 
   const family = options.family ?? "Caveat";

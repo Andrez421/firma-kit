@@ -90,7 +90,7 @@ export type SignatureFieldProps = {
   onRejection?: (reason: RejectionReason, message: string) => void;
   verifier?: Verifier;
   maxWidth?: number;
-  locale?: "es";
+  locale?: Locale;
   label?: string;
   className?: string;
   /** Puertos inyectables: pruebas sin canvas real. */
@@ -246,7 +246,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
           result = await sign(
             {
               mode: "type",
-              texto: (name ?? "").trim(),
+              text: (name ?? "").trim(),
               canvas: CANVAS_SIZE,
               measurer: effectiveMeasurer,
               rasterizer: effectiveRasterizer,

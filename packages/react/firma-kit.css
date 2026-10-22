@@ -7,7 +7,7 @@
  * Todo objetivo táctil mide al menos 44px: es un dedo sobre un móvil, no un
  * cursor sobre un escritorio. */
 
-signature {
+.signature {
   --signature-color: #111827;
   --signature-muted: #6b7280;
   --signature-surface: #ffffff;
@@ -27,7 +27,7 @@ signature {
 }
 
 @media (prefers-color-scheme: dark) {
-  signature {
+  .signature {
     --signature-color: #f9fafb;
     --signature-muted: #9ca3af;
     --signature-surface: #111827;

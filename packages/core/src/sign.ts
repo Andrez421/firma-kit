@@ -37,7 +37,7 @@ export type SignatureInput =
     }
   | {
       mode: "type";
-      texto: string;
+      text: string;
       canvas: { width: number; height: number };
       measurer: TextMeasurer;
       rasterizer: TextRasterizer;
@@ -102,7 +102,7 @@ export async function sign(
       rendered = rasterizeStroke(input.points, input.canvas);
     } else {
       const layout = layoutTypedName(
-        input.texto,
+        input.text,
         input.canvas,
         input.measurer
       );

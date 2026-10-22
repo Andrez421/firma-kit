@@ -71,8 +71,8 @@ const encoder = (): PngEncoder & ReturnType<typeof vi.fn> =>
   vi.fn(async () => new Uint8Array([1, 2, 3]));
 
 const measurer: TextMeasurer = {
-  measure: (texto, style) => ({
-    width: texto.length * style.size * 0.5,
+  measure: (text, style) => ({
+    width: text.length * style.size * 0.5,
     height: style.size,
   }),
 };
@@ -228,14 +228,14 @@ describe("firmar — modo escribir", () => {
   const base = { mode: "type" as const, canvas, measurer };
 
   it("rechaza el texto vacío antes de rasterizar", async () => {
-    const res = await sign({ ...base, texto: "  ", rasterizer }, encoder());
+    const res = await sign({ ...base, text: "  ", rasterizer }, encoder());
     expect(res).toMatchObject({ ok: false, reason: "empty" });
   });
 
   it("si la fuente no cargó, lo dice en vez de devolver un PNG a medias", async () => {
     const sinFuente: TextRasterizer = { rasterize: () => null };
     const res = await sign(
-      { ...base, texto: "Ana", rasterizer: sinFuente },
+      { ...base, text: "Ana", rasterizer: sinFuente },
       encoder()
     );
     expect(res).toMatchObject({
@@ -247,7 +247,7 @@ describe("firmar — modo escribir", () => {
 
   it("devuelve el nombre escrito como firma", async () => {
     const res = await sign(
-      { ...base, texto: "José Muñoz", rasterizer },
+      { ...base, text: "José Muñoz", rasterizer },
       encoder()
     );
     expect(res.ok).toBe(true);
