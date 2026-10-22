@@ -7,7 +7,10 @@
   "sideEffects": false,
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
-  "files": ["dist"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "dependencies": {
     "@firma-kit/core": "workspace:*"
   },
@@ -15,5 +18,17 @@
     "build": "tsc -p tsconfig.build.json",
     "type-check": "tsc --noEmit",
     "lint": "echo \"(pendiente: eslint)\" && exit 0"
+  },
+  "bin": {
+    "firma-kit-verify": "./dist/cli.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "engines": {
+    "node": ">=22"
   }
 }

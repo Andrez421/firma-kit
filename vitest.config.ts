@@ -18,6 +18,32 @@ export default defineConfig({
       },
       {
         resolve: {
+          alias: {
+            "@firma-kit/core": path.resolve(import.meta.dirname, "packages/core/src"),
+            "@firma-kit/verify": path.resolve(import.meta.dirname, "packages/verify/src"),
+          },
+        },
+        test: {
+          name: "verify",
+          environment: "node",
+          include: ["packages/verify/src/**/*.test.ts"],
+        },
+      },
+      {
+        resolve: {
+          alias: {
+            "@firma-kit/core": path.resolve(import.meta.dirname, "packages/core/src"),
+            "@firma-kit/verify": path.resolve(import.meta.dirname, "packages/verify/src"),
+          },
+        },
+        test: {
+          name: "eval",
+          environment: "node",
+          include: ["apps/eval/src/**/*.test.ts"],
+        },
+      },
+      {
+        resolve: {
           alias: { "@firma-kit/core": path.resolve(import.meta.dirname, "packages/core/src") },
         },
         test: {

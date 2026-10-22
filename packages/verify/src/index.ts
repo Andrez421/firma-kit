@@ -1,6 +1,23 @@
-// Fase 3: dos niveles, ambos en CPU y sin salir de la infraestructura.
-//   1. Gate rápido: zero-shot imagen↔texto (MobileCLIP-S0 int8, ~90 MB, ~50 ms).
-//   2. Segunda opinión: VLM pequeño (SmolVLM-256M GGUF Q4, ~300 MB, ~1-2 s)
-//      solo cuando el nivel 1 queda ambiguo.
-// Ver docs/ARCHITECTURE.md y docs/DECISIONS.md (ADR-003).
-export {};
+// Verificación visual en dos niveles, en CPU y sin sacar la imagen del proceso
+// del llamador (ADR-003, ADR-011).
+//
+// El paquete no empaqueta modelos: expone el verificador, el catálogo y las
+// herramientas para traerlos y comprobarlos. Los umbrales están versionados y
+// solo cambian con evidencia de evaluación archivada.
+
+export { THRESHOLDS, THRESHOLDS_VERSION, type Thresholds } from "./thresholds.js";
+export {
+  createTwoTierVerifier,
+  type Gate,
+  type SecondOpinion,
+  type TwoTierOptions,
+} from "./verifier.js";
+export { MODELS, modelsDir, type ModelFile, type ModelSpec } from "./models.js";
+export {
+  checkModels,
+  pullModels,
+  removeFile,
+  type DoctorReport,
+  type FetchLike,
+  type PullReport,
+} from "./pull.js";
