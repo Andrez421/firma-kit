@@ -130,3 +130,27 @@ Fuera de fase 1: `verify` funcional, publicación en npm, `apps/demo` Next.js, i
   subagente no disponible, no como éxito.
 - **E2** — Evidencia acumulada: 83 tests verdes (10 archivos, proyectos `core` y
   `react`), `pnpm type-check` y `pnpm build` en verde en todo el workspace.
+- **R1** — Review nativo **approved** (linaje `review-bca058c85fc43b88`, target
+  `sha256:06643c2a…`, autoridad quemada con `gentle-ai.review-acknowledged/v1`),
+  tras cuatro transacciones. El review encontró y se corrigieron cinco defectos
+  reales: selector raíz `.signature` sin punto, `locale` tipado como `"es"`,
+  `texto` en vez de `text` en el input de escribir, `locale` que no viajaba a
+  `coreOptions` y la copia española sin su punto final.
+- **R2** — Tres defectos de herramienta vistos durante el proceso, ninguno del
+  código: (a) `gentle_review status` no acepta `--base-ref`, así que un linaje
+  committed-only puede responder `unrelated`; (b) tras commitear una corrección
+  el alcance cambia y hace falta un `RECOVER` con autorización fresca; (c) el slot
+  `provider_targeted_validator` se rechaza siempre como *stale* aunque se copie
+  literal de un STATUS nuevo, porque el binding lleva la identidad del candidato
+  de corrección y el façade compara con la del workspace.
+- **F1** — Follow-ups no bloqueantes del review aprobado (severidad WARNING y
+  SUGGESTION, `disposition: informational`; no requieren re-review de esta
+  candidata): `R2-001` `packages/react/src/SignatureField.tsx:108-110`,
+  `R2-002` `apps/playground/src/App.tsx:10-12`, `R2-003`
+  `SignatureField.tsx:178`, `R2-004` `SignatureField.tsx:48`, `R2-005`
+  `packages/react/src/encoder.ts:38`, `R3-001` `SignatureField.tsx:266-267`,
+  `R3-002` `apps/playground/src/App.tsx:30`. El texto completo está en el recibo
+  del linaje; se abordan como trabajo aparte.
+- **E3** — Verificación final antes del PR: `pnpm test` 88 verdes, `pnpm type-check`
+  6/6, `pnpm build` 4/4, `vite build` del playground verde, y equivalencia bit a
+  bit del pipeline contra `main` (1260 casos, 0 diferencias).
