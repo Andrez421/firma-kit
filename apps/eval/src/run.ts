@@ -14,6 +14,8 @@ import { createCanvas, loadImage as cargarImagen, type Image } from "@napi-rs/ca
 import type { Bitmap, Verifier } from "@firma-kit/core";
 import { createTwoTierVerifier } from "@firma-kit/verify";
 
+import { createInkPipelineVerifier } from "./baseline.js";
+
 import { BUDGETS, parseManifest, type CorpusEntry } from "./manifest.js";
 import { formatReport, runEval } from "./runner.js";
 
@@ -50,15 +52,22 @@ function verificadorDesdeModelos(): Verifier {
   });
 }
 
+// `--baseline` mide el pipeline de tinta, que no necesita modelos. Sin el flag
+// se intenta el gate de dos niveles, que hoy lanza porque faltan los pesos.
+const usarBaseline = process.argv.includes("--baseline");
+const verifier = usarBaseline ? createInkPipelineVerifier() : verificadorDesdeModelos();
+const verifierName = usarBaseline ? "baseline-ink" : "two-tier";
+
 const manifiesto = JSON.parse(
   await readFile(path.join(corpus, "manifest.json"), "utf8")
 ) as unknown;
 const casos: CorpusEntry[] = parseManifest(manifiesto);
 const report = await runEval({
   cases: casos,
-  verifier: verificadorDesdeModelos(),
+  verifier,
   loadImage: leerBitmap,
   budgets: BUDGETS,
+  verifierName,
 });
 
 console.log(formatReport(report));
