@@ -3,9 +3,9 @@
 Reusable **signature module**: draw it, type it, upload a photo of it — with ink
 extraction, background removal and on-device visual verification.
 
-> Estado: **scaffold**. El pipeline de tinta ya está portado y probado; los
-> componentes React y la verificación visual están en el roadmap
-> ([`docs/PRODUCT.md`](docs/PRODUCT.md)).
+> Estado: **fase 1 cerrada**. Los cuatro modos funcionan en `core` sin DOM y
+> `<FirmaField />` ya los ofrece en React; la verificación visual está en el
+> roadmap ([`docs/PRODUCT.md`](docs/PRODUCT.md)). Nada publicado en npm todavía.
 
 ## Why
 
@@ -31,26 +31,38 @@ packages other apps can import.
 
 | Package | What | Status |
 | --- | --- | --- |
-| `@firma-kit/core` | Types, contract, ink pipeline (`extractSignature`, `flattenInk`, `stretchLevels`) | ported + tested |
-| `@firma-kit/react` | `<FirmaField />` with the four tabs, accessible, styleable | planned |
-| `@firma-kit/verify` | Two-tier CPU verification: MobileCLIP-S0 zero-shot → SmolVLM-256M | planned |
+| `@firma-kit/core` | Types, contract, `firmar()` for the four modes, ink pipeline (`extractSignature`, `flattenInk`, `stretchLevels`) | done (phase 1) |
+| `@firma-kit/react` | `<SignatureField />`: four tabs, accessible, CSS-variable theming | base done (phase 2) |
+| `@firma-kit/verify` | Two-tier CPU verification: MobileCLIP-S0 zero-shot → SmolVLM-256M | port only, phase 3 |
 
 ## Quick start (core today)
 
 ```bash
 pnpm install
-pnpm test        # 25 tests del pipeline de tinta
+pnpm test        # 83 tests: pipeline, contrato, modos y componente
 ```
 
 ```ts
-import { extractSignature, flattenInk, INK_MESSAGE } from "@firma-kit/core";
+import { sign, MESSAGES_EN, type Bitmap } from "@firma-kit/core";
 
-// `rgba` es la imagen compuesta sobre blanco (ImageData en el navegador,
-// sharp en el servidor). Sin DOM, sin red.
-const res = extractSignature(rgba, width, height);
-if (!res.ok) throw new Error(INK_MESSAGE[res.reason]);
-const plano = flattenInk(res.alpha, res.width, res.height, res.box);
+// `image` is whatever your adapter already decoded: ImageData in the browser,
+// a sharp buffer on the server. `core` touches no DOM and no network.
+declare const image: Bitmap;
+declare const encodePng: (bitmap: Bitmap) => Promise<Uint8Array>;
+
+const result = await sign({ mode: "upload", image }, encodePng);
+if (!result.ok) {
+  // `reason` is a code; `message` is already written for the person signing.
+  console.log(result.reason, result.message);
+} else {
+  // Opaque PNG, ink on white, <= 900px wide.
+  console.log(result.signature.png.byteLength);
+}
 ```
+
+In React: `import { SignatureField } from "@firma-kit/react"` plus its
+stylesheet `@firma-kit/react/firma-kit.css`. Manual test bench:
+`pnpm --filter @firma-kit/playground dev`.
 
 ## Docs
 
