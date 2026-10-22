@@ -1,77 +1,104 @@
-# Arquitectura
+# Architecture
 
-## Paquetes
-
-```
-@firma-kit/core        sin DOM, sin React, sin red
-  ├── tipos.ts         contrato: ModoFirma, Firma, ResultadoFirma, MotivoRechazo
-  └── tinta/           pipeline puro: extractSignature, flattenInk, stretchLevels
-@firma-kit/react       componentes + estilos (CSS variables, no Tailwind obligatorio)
-@firma-kit/verify      verificación visual en CPU (MobileCLIP-S0 → SmolVLM-256M)
-apps/demo              Next.js que ejercita los cuatro modos
-```
-
-Regla de dependencias: `react` y `verify` dependen de `core`; `core` no depende
-de nadie. Es lo que permite usar el módulo en el navegador, en una API, en un
-worker o en un test de Node.
-
-## Flujo de una firma por imagen
+## Packages
 
 ```
-archivo/foto
-   │  (navegador: canvas → ImageData | servidor: sharp → Buffer RGBA)
+@firma-kit/core        no DOM, no React, no network
+  ├── types.ts         contract: SignatureMode, Signature, SignatureResult, RejectionReason
+  ├── sign.ts          sign(): one entry point for the four modes
+  ├── image.ts         block-average downscale, never upscales
+  ├── format.ts        PNG/JPEG by magic bytes, no decoding
+  ├── verifier.ts      Verifier port (types only)
+  ├── messages/        en.ts and es.ts copy for every rejection reason
+  ├── modes/           draw.ts (stroke model) and type.ts (layout)
+  └── ink/             pure pipeline: extractSignature, flattenInk, stretchLevels
+@firma-kit/react       components + styles (CSS variables, Tailwind not required)
+@firma-kit/verify      visual verification on CPU (MobileCLIP-S0 → SmolVLM-256M)
+apps/playground        Vite bench for the four modes (private, not published)
+apps/demo              Next.js exercising the four modes (phase 4)
+```
+
+Dependency rule: `react` and `verify` depend on `core`; `core` depends on nobody.
+That is what lets the same module run in a browser, an API, a worker or a Node
+test.
+
+## Flow of a signature from an image
+
+```
+file/photo
+   │  (browser: canvas → ImageData | server: sharp → RGBA buffer)
    ▼
-extractSignature(rgba, w, h)          ← núcleo, ya portado y probado
-   ├─ limpieza directa (Sauvola local)
-   ├─ si no es confiable → stretchLevels (auto-niveles) → limpieza otra vez
-   ├─ gates: sin_tinta · fondo_oscuro · no_es_firma · ruido
+scaleToMaxSide(bitmap, 1200)          ← memory ceiling for the analysis
    ▼
-flattenInk(alpha, w, h, caja)         ← tinta sobre blanco, sin alfa
+extractSignature(rgba, w, h)          ← core, ported and tested
+   ├─ direct cleanup (local Sauvola)
+   ├─ if not confident → stretchLevels (auto-levels) → cleanup again
+   ├─ gates: no_ink · dark_background · not_a_signature · noise
    ▼
-Firma { png, ancho, alto, modo, creadaEn }
+flattenInk(alpha, w, h, box)          ← ink on white, no alpha
+   ▼
+scaleToWidth(..., 900) → encoder → Signature { png, width, height, mode, createdAt }
 ```
 
-`realzada` en `Firma` indica que se usó la cascada, para poder auditar el
-resultado después.
+`enhanced` on the result means the level cascade produced it, so the outcome can
+be audited afterwards.
 
-## Verificación visual (fase 3)
+## Draw and type modes
 
-Dos niveles, **ambos en CPU**, la imagen nunca sale de la infraestructura:
+Both keep the same split: the part that can be pure lives in `core`, the part
+that needs a browser enters through a port.
 
-| Nivel | Modelo | Tamaño | Latencia | Papel |
+- **Draw**: `rasterizeStroke` turns pointer samples into an antialiased bitmap;
+  simulated pressure is derived from speed, so mouse, finger and stylus behave
+  the same and the result is testable in Node.
+- **Type**: `layoutTypedName` decides lines and font size from a `TextMeasurer`;
+  `TextRasterizer` paints them. Four OFL fonts ship with the package
+  (Caveat, Pacifico, Great Vibes, Sacramento, `latin` subset, 142 KB).
+
+## Visual verification (phase 3)
+
+Two tiers, **both on CPU**, the image never leaves the caller's infrastructure:
+
+| Tier | Model | Size | Latency | Role |
 | --- | --- | --- | --- | --- |
-| 1 | MobileCLIP-S0 int8 (zero-shot imagen↔texto) | ~90 MB | ~50 ms | gate: ¿la clase ganadora es "firma manuscrita"? |
-| 2 | SmolVLM-256M GGUF Q4 | ~300 MB | ~1–2 s | segunda opinión solo si el nivel 1 es ambiguo |
+| 1 | MobileCLIP-S0 int8 (zero-shot image↔text) | budget ~90 MB | ~50 ms | gate: is the winning class "handwritten signature"? |
+| 2 | SmolVLM-256M GGUF Q4 | ~300 MB | ~1–2 s | second opinion only when tier 1 is ambiguous |
 
-Clases abiertas del nivel 1 (borrador): «una firma manuscrita sobre papel»,
-«una cédula o documento de identidad», «una factura o página impresa», «una foto
-de un objeto», «una captura de pantalla», «una persona».
+The published int8 ONNX weights measure ≈55 MB (`vision_model_int8` 11.8 MB +
+`text_model_int8` 42.8 MB); the tier-1 budget is reconciled when phase 3 sizes the
+container.
 
-Detalles que ya están decididos por la evidencia:
+Open classes for tier 1 (draft): "a handwritten signature on paper", "an ID card
+or identity document", "an invoice or printed page", "a photo of an object", "a
+screenshot", "a person".
 
-- **Se clasifica la imagen original**, no la limpia: al binarizar, una cédula se
-  vuelve "página con texto" y se pierde la señal.
-- Los modelos se cachean en un volumen (`FIRMA_KIT_MODULES_DIR`), no en el
-  paquete. Nunca se empaquetan: sus licencias son suyas.
-- Privacidad: un documento de identidad es dato personal (Ley 1581 de 2012 en
-  Colombia). Un clasificador en la nube queda descartado por diseño.
+Details already settled by the evidence:
 
-## Coste en el host
+- **The original image is classified**, not the cleaned one: binarising turns an
+  ID card into a "page with text" and the signal is lost.
+- Models are cached in a volume (`FIRMA_KIT_MODULES_DIR`), never bundled: their
+  licences are their own.
+- Privacy: an identity document is personal data (Ley 1581 de 2012 in Colombia).
+  A cloud classifier is ruled out by design.
 
-| Componente | Disco | RAM en uso |
+## Host cost
+
+| Component | Disk | RAM in use |
 | --- | --- | --- |
-| núcleo | — | unos pocos MB por imagen ≤1200px |
-| nivel 1 | ~90 MB | ~200 MB |
-| nivel 2 | ~300 MB | ~500 MB–1 GB |
+| core | — | a few MB per image ≤1200px |
+| tier 1 | ~90 MB | ~200 MB |
+| tier 2 | ~300 MB | ~500 MB–1 GB |
 
-Todo cabe en el contenedor actual (sin GPU). El nivel 1 puede correr en el
-navegador con transformers.js si algún proyecto lo prefiere; el nivel 2 no.
+Everything fits the current container (no GPU). Tier 1 can run in the browser
+with transformers.js if a project prefers it; tier 2 cannot.
 
-## Validación (el bloqueo real)
+## Validation (the real blocker)
 
-Hay 1 018 firmas reales como positivos y **un** negativo. Antes de fijar
-umbrales hace falta un lote de negativos (cédula, factura, recibo, pantallazo,
-objeto, mano, hoja vacía): **30–50** mínimo. Métricas:
+There are 1 018 real signatures as positives and **one** negative. Before fixing
+thresholds a batch of negatives is required (ID card, invoice, receipt,
+screenshot, object, hand, blank page): **30–50** minimum. Metrics:
 
-- falsos rechazos sobre firmas reales **≤ 1–2 %** (no negociable);
-- falsos aceptados sobre negativos **≥ 90 %**.
+- false rejections on real signatures **≤ 1–2 %** (not negotiable);
+- false accepts on negatives **≥ 90 %**.
+
+Español: [`ARCHITECTURE.es.md`](ARCHITECTURE.es.md).

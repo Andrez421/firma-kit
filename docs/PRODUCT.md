@@ -1,61 +1,67 @@
-# Producto — firma-kit
+# Product — firma-kit
 
-## Problema
+## Problem
 
-Tres proyectos del mismo ecosistema (pgaa, GCly, registro_asistencia) necesitaron
-el mismo módulo de firma y cada uno lo escribió a su manera. El resultado: tres
-niveles de calidad distintos, tres formas de limpiar el fondo (una sola
-validada) y ningún sitio donde arreglar un defecto una vez para todos.
+Three projects in the same ecosystem (pgaa, GCly, registro_asistencia) needed the
+same signature module and each one wrote it its own way. The result: three
+different quality levels, three ways of cleaning the background (only one of them
+validated) and nowhere to fix a defect once for everybody.
 
-## Visión
+## Vision
 
-Un paquete que cualquier proyecto importe y tenga, de una vez, el módulo de
-firma completo: cuatro modos, limpieza de tinta correcta, rechazo explicable y
-verificación visual en el dispositivo. Publicado como open source, con pruebas
-y documentado para que un tercero lo use sin leer el código.
+A package any project can import and get, in one go, the complete signature
+module: four modes, correct ink cleanup, explained rejection and on-device visual
+verification. Open source, tested, and documented so a third party can use it
+without reading the code.
 
-## Alcance (el módulo)
+## Scope (the module)
 
-1. **Dibujar** — lienzo con puntero/táctil, trazo con presión simulada, limpiar,
-   confirmación.
-2. **Escribir** — el nombre en una de N fuentes cursivas, exportado a PNG.
-3. **Subir imagen** — archivo PNG/JPEG, limpieza de tinta, recorte.
-4. **Tomar foto** — cámara trasera (`capture`), mismo pipeline que subir.
-5. **Contrato de salida** — siempre PNG opaco, tinta sobre blanco, ≤900px de ancho.
-6. **Verificación visual** de los modos 3 y 4: rechazar lo que no es una firma.
-7. **Capa React** accesible (teclado, lector de pantalla, 44px) y estilable.
+1. **Draw** — canvas with pointer/touch, simulated-pressure stroke, clear,
+   confirmation.
+2. **Type** — the name in one of N cursive fonts, exported to PNG.
+3. **Upload image** — PNG/JPEG file, ink cleanup, crop.
+4. **Take a photo** — rear camera (`capture`), same pipeline as upload.
+5. **Output contract** — always an opaque PNG, ink on white, ≤900px wide.
+6. **Visual verification** of the image modes: reject what is not a signature.
+7. **React layer**, accessible (keyboard, screen reader, 44px targets) and
+   styleable.
 
-## Fuera de alcance
+## Out of scope
 
-- Verificar **autoría** o identidad (no es biometría ni peritaje caligráfico).
-- Persistir: el módulo devuelve la firma; guardarla es del proyecto que lo usa
-  (adaptadores opcionales en fases posteriores).
-- Firma criptográfica / PAdES: GCly ya tiene su modelo de sellos; aquí solo se
-  documentará cómo convive.
-- Multi-tenant, cuentas, permisos.
+- Verifying **authorship** or identity (this is not biometrics or handwriting
+  expertise).
+- Persisting: the module returns the signature; storing it belongs to the project
+  that uses it (optional adapters in later phases).
+- Cryptographic signature / PAdES: GCly already has its seal model; here we only
+  document how the two coexist.
+- Multi-tenant, accounts, permissions.
 
-## Fases
+## Phases
 
-| Fase | Contenido | Estado |
+| Phase | Content | Status |
 | --- | --- | --- |
-| 0 | Andamiaje, docs, contrato de tipos, pipeline de tinta portado + tests | **hecho** |
-| 1 | `core`: `Bitmap` estructural, `dibujar`, `escribir` (fuentes self-hosted), `subir`/`foto`, `firmar()` | **hecho** |
-| 2 | `react`: `<FirmaField />`, estilos con CSS variables, a11y, tests de componente | en curso: componente base y a11y hechos |
-| 3 | `verify`: MobileCLIP-S0 int8 (gate) + SmolVLM-256M (segunda opinión), umbrales y evals | |
-| 4 | `apps/demo` (Next.js), publicación en npm, adaptadores (Supabase/Prisma/S3), i18n | |
+| 0 | Scaffolding, docs, type contract, ported ink pipeline + tests | **done** |
+| 1 | `core`: structural `Bitmap`, `draw`, `type` (self-hosted fonts), `upload`/`camera`, `sign()` | **done** |
+| 2 | `react`: `<SignatureField />`, CSS-variable styles, a11y, component tests | in progress: base component and a11y done |
+| 3 | `verify`: MobileCLIP-S0 int8 (gate) + SmolVLM-256M (second opinion), thresholds and evals | |
+| 4 | `apps/demo` (Next.js), npm publication, adapters (Supabase/Prisma/S3), i18n | |
 
-## Métricas de éxito
+## Success metrics
 
-- Un proyecto nuevo integra el módulo en **< 30 min** (componente + callback).
-- **0** firmas impresas con fondo gris/negro (el defecto que originó todo).
-- Falsos rechazos sobre firmas reales **≤ 1 %** (la métrica que no se negocia).
-- `pnpm test` cubre el pipeline y los cuatro modos sin navegador real.
+- A new project integrates the module in **< 30 min** (component + callback).
+- **0** signatures printed with a grey/black background (the defect that started
+  all of this).
+- False rejections on real signatures **≤ 1 %** (the metric that is not
+  negotiable).
+- `pnpm test` covers the pipeline and the four modes with no real browser.
 
-## Decisiones pendientes
+## Open decisions
 
-- Nombre/lanzamiento en npm (¿`firma-kit` libre?) y si el primer release es
-  `0.1.0` con solo `core` o se espera a `react`.
-- ~~Idioma de la API pública frente a los mensajes de usuario~~: resuelto en la
-  enmienda de ADR-004 — contrato en inglés, mensajes en inglés y español.
-- Traducir `docs/PRODUCT.md`, `docs/ARCHITECTURE.md` y `docs/SURVEY.md` al inglés
-  (hoy solo están en español; el README ya es bilingüe).
+- npm name/release: the `firma-kit` scope is free, and ADR-009 sets publication
+  for when phase 2 closes with `react` working. Nothing is published yet.
+- ~~Language of the public API versus user messages~~: settled by the ADR-004
+  amendment — English contract, messages in English and Spanish.
+- `docs/DECISIONS.md` is still Spanish only; the rest of the public docs are
+  bilingual (`*.es.md` next to the English file).
+
+Español: [`PRODUCT.es.md`](PRODUCT.es.md).
