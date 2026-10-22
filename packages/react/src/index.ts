@@ -5,7 +5,7 @@
 // Para leer el contrato desde el servidor existe `@firma-kit/react/server`.
 
 export { SignatureField, availableModes } from "./SignatureField.js";
-export type { SignatureFieldHandle, SignatureFieldProps } from "./SignatureField.js";
+export type { SignatureFieldHandle, SignatureFieldProps, ToolbarAction } from "./SignatureField.js";
 export { createCanvasPngEncoder, toPngBlob } from "./encoder.js";
 export {
   loadFont,

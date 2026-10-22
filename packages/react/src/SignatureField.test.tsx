@@ -635,3 +635,46 @@ describe("<SignatureField />", () => {
     expect(screen.getByRole("button", { name: "Limpiar" })).toBeTruthy();
   });
 });
+
+describe("barra de acciones", () => {
+  const botones = (container: HTMLElement) =>
+    within(container.querySelector<HTMLElement>(".signature__actions")!).getAllByRole("button");
+
+  it("pinta las acciones en el orden pedido", () => {
+    const { container } = render(<SignatureField toolbar={["confirm", "clear"]} />);
+    expect(botones(container).map((boton) => boton.textContent)).toEqual([
+      "Use this signature",
+      "Clear",
+    ]);
+  });
+
+  it("deja el campo sin barra cuando la lista va vacía", () => {
+    const { container } = render(<SignatureField toolbar={[]} />);
+    expect(
+      within(container.querySelector<HTMLElement>(".signature__actions")!).queryAllByRole("button")
+    ).toHaveLength(0);
+  });
+
+  it("omite las acciones de dibujo cuando el modo activo no las usa", () => {
+    // «Undo» en el modo escribir no tiene sentido: se omite en vez de aparecer
+    // deshabilitado.
+    const { container } = render(
+      <SignatureField name="María" modes={["type"]} toolbar={["undo", "confirm"]} />
+    );
+    expect(botones(container).map((boton) => boton.textContent)).toEqual([
+      "Use this signature",
+    ]);
+  });
+
+  it("mantiene el orden de siempre si no se pide otro", () => {
+    const { container } = render(<SignatureField />);
+    expect(botones(container).map((boton) => boton.textContent)).toEqual([
+      "Undo",
+      "Redo",
+      "Erase",
+      "Full screen",
+      "Clear",
+      "Use this signature",
+    ]);
+  });
+});

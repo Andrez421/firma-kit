@@ -2,10 +2,19 @@
 // props y volver a cargar. Todo lo que hay aquí se consigue con props y variables CSS
 // que el componente ya expone; nada de esto toca el contrato.
 import type { Locale, SignatureMode, TypeFont } from "@firma-kit/core";
+import type { ToolbarAction } from "@firma-kit/react";
 
 import type { PageTheme } from "./presets.js";
 
 export const ALL_MODES: SignatureMode[] = ["draw", "type", "upload", "camera"];
+export const ALL_ACTIONS: ToolbarAction[] = [
+  "undo",
+  "redo",
+  "erase",
+  "fullscreen",
+  "clear",
+  "confirm",
+];
 export const FONTS: TypeFont[] = ["Caveat", "Pacifico", "Great Vibes", "Sacramento"];
 
 export type DemoConfig = {
@@ -20,6 +29,10 @@ export type DemoConfig = {
   font: TypeFont;
   maxBytesKb: number;
   name: string;
+  /** Acciones de la barra, en orden. Vacío = sin barra. */
+  toolbar: ToolbarAction[];
+  /** Une cada trazo al último punto del anterior. */
+  strokeLink: boolean;
   stroke: {
     minWidth: number;
     maxWidth: number;
@@ -42,6 +55,8 @@ export const DEFAULT_CONFIG: DemoConfig = {
   // Con un nombre por defecto se ven los cuatro modos al abrir la página; borrarlo
   // enseña el comportamiento real del modo escribir sin nombre.
   name: "María Fernanda Gómez",
+  toolbar: ALL_ACTIONS,
+  strokeLink: false,
   stroke: { minWidth: 0.9, maxWidth: 3.4, smoothing: 0.5, ink: 0, maxSpeed: 1.4 },
 };
 
@@ -62,6 +77,8 @@ export function propsFor(config: DemoConfig, pageTheme: PageTheme) {
     font: config.font,
     maxBytes: config.maxBytesKb * 1024,
     stroke: config.stroke,
+    toolbar: config.toolbar,
+    strokeLink: config.strokeLink,
     ...(nombre ? { name: nombre } : {}),
   };
 }
@@ -96,6 +113,17 @@ export function normalizar(parcial: unknown): DemoConfig {
     font: FONTS.includes(datos.font as TypeFont) ? (datos.font as TypeFont) : DEFAULT_CONFIG.font,
     maxBytesKb: clamp(Number(datos.maxBytesKb), 64, 20480, DEFAULT_CONFIG.maxBytesKb),
     name: typeof datos.name === "string" ? datos.name.slice(0, 80) : "",
+    // Una barra sin acciones es válida: el padre manda con el ref. El orden se
+    // respeta tal como llega — es la razón de ser de la prop —, así que se filtra
+    // contra las acciones conocidas sin reordenarlas y se deduplica.
+    toolbar: Array.isArray(datos.toolbar)
+      ? datos.toolbar
+          .filter((accion): accion is ToolbarAction =>
+            ALL_ACTIONS.includes(accion as ToolbarAction)
+          )
+          .filter((accion, indice, lista) => lista.indexOf(accion) === indice)
+      : DEFAULT_CONFIG.toolbar,
+    strokeLink: datos.strokeLink === true,
     stroke: {
       minWidth: clamp(Number(stroke.minWidth), 0.2, 6, DEFAULT_CONFIG.stroke.minWidth),
       maxWidth: clamp(Number(stroke.maxWidth), 0.5, 12, DEFAULT_CONFIG.stroke.maxWidth),
