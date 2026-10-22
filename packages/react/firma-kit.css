@@ -18,16 +18,28 @@
   --signature-gap: 12px;
   --signature-font: system-ui, -apple-system, "Segoe UI", sans-serif;
 
+  /* El componente pinta SU superficie y su color de texto juntos. Si solo
+     cambiara el color del texto, en un esquema oscuro dentro de una página
+     clara el resultado es texto casi blanco sobre fondo blanco: el contraste es
+     responsabilidad del componente, no de la página que lo hospeda. */
+  background: var(--signature-surface);
+  border-radius: var(--signature-radius);
+  /* Los controles nativos (input de archivo, select) siguen este valor: sin él,
+     en oscuro se dibujan con el chrome claro del navegador. */
+  color-scheme: light;
   color: var(--signature-color);
   display: flex;
   flex-direction: column;
   font-family: var(--signature-font);
   gap: var(--signature-gap);
   max-width: 100%;
+  padding: var(--signature-gap);
 }
 
+/* Oscuro por preferencia del sistema, salvo que el consumidor pida claro. */
 @media (prefers-color-scheme: dark) {
-  .signature {
+  .signature:not([data-theme="light"]) {
+    color-scheme: dark;
     --signature-color: #f9fafb;
     --signature-muted: #9ca3af;
     --signature-surface: #111827;
@@ -35,6 +47,17 @@
     --signature-focus: #60a5fa;
     --signature-error: #fca5a5;
   }
+}
+
+/* Y oscuro explícito, sin depender del sistema operativo. */
+.signature[data-theme="dark"] {
+  color-scheme: dark;
+  --signature-color: #f9fafb;
+  --signature-muted: #9ca3af;
+  --signature-surface: #111827;
+  --signature-border: #374151;
+  --signature-focus: #60a5fa;
+  --signature-error: #fca5a5;
 }
 
 .signature__tabs {

@@ -21,6 +21,9 @@ Vite, no `dist`, así que no hace falta compilar antes.
    (`touch-action: none`) y los botones deben medir al menos 44px.
 4. **Lector de pantalla**: las pestañas se anuncian con su rol, y el modo
    escribir se ofrece como alternativa accesible al lienzo.
+5. **Tema**: con el sistema en oscuro y el selector en «Sistema», todo el
+   componente debe verse sobre su propia superficie oscura (nunca texto claro
+   sobre blanco). «Claro» y «Oscuro» fuerzan el esquema sin tocar el sistema.
 
 Los puntos 1-4 están pendientes de firma humana: este entorno no tiene navegador
 gráfico, así que el playground se verificó con `vite build` (compila y empaqueta
