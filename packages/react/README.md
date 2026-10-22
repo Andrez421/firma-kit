@@ -66,6 +66,12 @@ Ref handle: `clear()`, `confirm()`, `openMode(mode)`.
 `foto` is hidden when `navigator.mediaDevices` is missing; `escribir` is hidden
 without `name`. Offering a mode that cannot work is worse than not offering it.
 
+## Sizes
+
+`size="sm" | "md" | "lg"` (default `md`) changes the aria and the canvas height
+(140 / 200 / 280 px) through `--signature-canvas-height` and `--signature-gap`.
+It never shrinks a target below 44px: the size is comfort, not accessibility.
+
 ## Theme tokens
 
 Override any of these on the component or an ancestor. The component paints its
@@ -94,8 +100,21 @@ match instead of keeping the browser's light chrome.
   --signature-color: #0f172a;
   --signature-focus: #7c3aed;
   --signature-radius: 4px;
+  --signature-canvas-height: 240px;
 }
 ```
+
+Or inline, when you do not want a stylesheet of your own:
+
+```tsx
+<SignatureField
+  size="lg"
+  style={{ "--signature-focus": "#7c3aed", "--signature-radius": "16px" } as React.CSSProperties}
+/>
+```
+
+Three ready-made presets live in `apps/playground` (`Por defecto`, `Corporativo`,
+`Cálido`) so you can see the effect before choosing your own numbers.
 
 ## Accessibility
 

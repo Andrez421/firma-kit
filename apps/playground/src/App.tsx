@@ -8,8 +8,21 @@ import { useEffect, useMemo, useState } from "react";
 
 type Tema = "auto" | "light" | "dark";
 
+// Presets de personalización: un integrador tiene que poder VER el efecto de los
+// tokens, no deducirlo leyendo el CSS.
+const PRESETS = {
+  "Por defecto": { brand: "#111827", accent: "#2563eb", radius: 10 },
+  Corporativo: { brand: "#0f172a", accent: "#0ea5e9", radius: 4 },
+  Cálido: { brand: "#3f2d20", accent: "#b45309", radius: 16 },
+} as const;
+
+type PresetNombre = keyof typeof PRESETS;
+
 export function App() {
   const [theme, setTheme] = useState<Tema>("auto");
+  const [size, setSize] = useState<"sm" | "md" | "lg">("md");
+  const [preset, setPreset] = useState<PresetNombre>("Por defecto");
+  const tokens = PRESETS[preset];
   const [name, setName] = useState("José Muñoz Peña");
   const [signature, setSignature] = useState<Signature | null>(null);
   const [rejection, setRejection] = useState<string | null>(null);
@@ -61,7 +74,42 @@ export function App() {
         />
       </label>
 
+      <fieldset
+        style={{ border: "1px solid #d1d5db", borderRadius: 8, marginBottom: 16, padding: 12 }}
+      >
+        <legend>Personalización</legend>
+        <label style={{ marginRight: 12 }}>
+          Tema visual:{" "}
+          <select
+            value={preset}
+            onChange={(e) => setPreset(e.target.value as PresetNombre)}
+          >
+            {Object.keys(PRESETS).map((nombre) => (
+              <option key={nombre} value={nombre}>
+                {nombre}
+              </option>
+            ))}
+          </select>
+        </label>
+        <label>
+          Tamaño del campo:{" "}
+          <select value={size} onChange={(e) => setSize(e.target.value as "sm" | "md" | "lg")}>
+            <option value="sm">Pequeño (140px de lienzo)</option>
+            <option value="md">Mediano (200px)</option>
+            <option value="lg">Grande (280px)</option>
+          </select>
+        </label>
+      </fieldset>
+
       <SignatureField
+        size={size}
+        style={
+          {
+            "--signature-color": tokens.brand,
+            "--signature-focus": tokens.accent,
+            "--signature-radius": `${tokens.radius}px`,
+          } as React.CSSProperties
+        }
         name={name}
         {...(theme === "auto" ? {} : { theme })}
         onSignature={(next) => {

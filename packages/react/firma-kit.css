@@ -17,6 +17,8 @@
   --signature-radius: 10px;
   --signature-gap: 12px;
   --signature-font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  /* Alto del lienzo de dibujar: el tamaño del módulo, no una constante escondida. */
+  --signature-canvas-height: 200px;
 
   /* El componente pinta SU superficie y su color de texto juntos. Si solo
      cambiara el color del texto, en un esquema oscuro dentro de una página
@@ -60,6 +62,29 @@
   --signature-error: #fca5a5;
 }
 
+/* Tamaños del campo. Todos dejan los objetivos táctiles en 44px o más: el
+   tamaño cambia el aire y el lienzo, nunca la accesibilidad. */
+.signature[data-size="sm"] {
+  --signature-gap: 8px;
+  --signature-canvas-height: 140px;
+  --signature-radius: 8px;
+}
+
+.signature[data-size="lg"] {
+  --signature-gap: 16px;
+  --signature-canvas-height: 280px;
+}
+
+.signature[data-size="sm"] .signature__tab,
+.signature[data-size="sm"] .signature__button {
+  padding: 8px 12px;
+}
+
+.signature[data-size="lg"] .signature__tab,
+.signature[data-size="lg"] .signature__button {
+  padding: 12px 20px;
+}
+
 .signature__tabs {
   display: flex;
   flex-wrap: wrap;
@@ -94,7 +119,7 @@
   background: var(--signature-surface);
   border: 1px dashed var(--signature-border);
   border-radius: var(--signature-radius);
-  height: 200px;
+  height: var(--signature-canvas-height);
   touch-action: none;
   width: 100%;
 }
