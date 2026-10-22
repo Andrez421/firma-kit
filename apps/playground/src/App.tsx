@@ -4,14 +4,23 @@
 
 import type { Signature } from "@firma-kit/core";
 import { SignatureField, toPngBlob } from "@firma-kit/react";
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 export function App() {
-  const [name, setNombre] = useState("José Muñoz Peña");
-  const [signature, setFirma] = useState<Signature | null>(null);
-  const [rejection, setRechazo] = useState<string | null>(null);
+  const [name, setName] = useState("José Muñoz Peña");
+  const [signature, setSignature] = useState<Signature | null>(null);
+  const [rejection, setRejection] = useState<string | null>(null);
 
-  const url = signature ? URL.createObjectURL(toPngBlob(signature)) : null;
+  // El object URL se revoca al cambiar la firma: crearlo en cada render dejaba
+  // blobs vivos hasta cerrar la pestaña.
+  const url = useMemo(
+    () => (signature ? URL.createObjectURL(toPngBlob(signature)) : null),
+    [signature]
+  );
+  useEffect(() => {
+    if (!url) return;
+    return () => URL.revokeObjectURL(url);
+  }, [url]);
 
   return (
     <main style={{ fontFamily: "system-ui, sans-serif", padding: 24, maxWidth: 720 }}>
@@ -21,20 +30,20 @@ export function App() {
         <span>Nombre a escribir</span>
         <input
           value={name}
-          onChange={(event) => setNombre(event.target.value)}
+          onChange={(event) => setName(event.target.value)}
           style={{ display: "block", minHeight: 44, width: "100%" }}
         />
       </label>
 
       <SignatureField
         name={name}
-        onSignature={(nueva) => {
-          setFirma(nueva);
-          setRechazo(null);
+        onSignature={(next) => {
+          setSignature(next);
+          setRejection(null);
         }}
         onRejection={(_motivo, message) => {
-          setFirma(null);
-          setRechazo(message);
+          setSignature(null);
+          setRejection(message);
         }}
       />
 

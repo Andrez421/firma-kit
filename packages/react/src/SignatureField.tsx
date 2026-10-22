@@ -45,7 +45,25 @@ const TAB_LABELS: Record<Locale, Record<SignatureMode, string>> = {
   es: { draw: "Dibujar", type: "Escribir", upload: "Subir imagen", camera: "Tomar foto" },
 };
 
-const FIELD_TEXT: Record<Locale, Record<string, string>> = {
+/**
+ * Copy de la interfaz. Las claves están tipadas a propósito: con
+ * `Record<string, string>` una clave que falta devuelve `undefined` y el
+ * texto desaparece de la pantalla sin que nada falle.
+ */
+type FieldText = {
+  canvas: string;
+  typeHint: string;
+  typeEmpty: string;
+  chooseFile: string;
+  upload: string;
+  camera: string;
+  clear: string;
+  confirm: string;
+  busy: string;
+  ready: string;
+};
+
+const FIELD_TEXT: Record<Locale, FieldText> = {
   en: {
     canvas: "Area to draw the signature with a finger or pointer",
     typeHint: "Your name will be written in cursive",
@@ -106,8 +124,8 @@ export type SignatureFieldHandle = {
 };
 
 /**
- * Qué modes se pueden ofrecer de verdad: `escribir` necesita un name y `foto`
- * necesita cámara. Ocultar un mode imposible es mejor que un botón que falla.
+ * Which modes can honestly be offered: `type` needs a name and `camera` needs a
+ * camera. Hiding an impossible mode beats rendering a button that fails.
  */
 export function availableModes(options: {
   // `| undefined` explícito: quien llama pasa props opcionales tal cual, y con
@@ -175,7 +193,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
     const [file, setFile] = useState<File | null>(null);
     const [signature, setSignature] = useState<Signature | null>(value ?? null);
     const [error, setError] = useState<string | null>(null);
-    const [busy, setOcupado] = useState(false);
+    const [busy, setBusy] = useState(false);
 
     const drawing = useRef(false);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -234,7 +252,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
 
     const confirm = useCallback(async () => {
       setError(null);
-      setOcupado(true);
+      setBusy(true);
       try {
         let result;
         if (mode === "draw") {
@@ -263,8 +281,9 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
           }
           const image = await readBitmap(file).catch(() => null);
           if (!image) {
-            setError(rejectionMessage("unreadable", locale));
-            onRejection?.("unreadable", rejectionMessage("unreadable", locale));
+            const message = rejectionMessage("unreadable", locale);
+            setError(message);
+            onRejection?.("unreadable", message);
             return;
           }
           result = await sign(
@@ -287,7 +306,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
         setError(rejectionMessage("unreadable", locale));
         onRejection?.("unreadable", rejectionMessage("unreadable", locale));
       } finally {
-        setOcupado(false);
+        setBusy(false);
       }
     }, [
       file,
