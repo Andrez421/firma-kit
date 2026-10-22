@@ -22,7 +22,22 @@ import { SignatureField } from "@firma-kit/react";
 ```
 
 The stylesheet is required: without it the component has no surface, no spacing
-and no contrast. The four handwriting fonts ship with it (OFL, 142 KB).
+and no contrast. The four handwriting fonts ship with it (OFL, 142 KB), and the
+type mode offers them as a radiogroup where each option is drawn in its own
+cursive — picking a style by name alone tells you nothing.
+
+## Validation
+
+Uploads and camera captures are checked **before** any decoding work:
+
+1. **Size** against `maxBytes` (5 MB by default) → `too_heavy`.
+2. **Format by magic bytes** with `detectFormat`, not by extension or by the MIME
+   the browser declares → `unsupported_format`. A PDF renamed to `.png` is a PDF.
+3. Then the ink pipeline runs and may reject with `no_ink`, `dark_background`,
+   `not_a_signature` or `noise`.
+
+Every rejection carries a code (`RejectionReason`) and a message already written
+for the person signing, in `en` or `es`.
 
 ## Props
 
@@ -36,6 +51,10 @@ and no contrast. The four handwriting fonts ship with it (OFL, 142 KB).
 | `onRejection` | `(reason, message) => void` | — | Fires on every rejection, message already localised |
 | `verifier` | `Verifier` | — | Visual verification (phase 3); absent means no verification |
 | `maxWidth` | `number` | `900` | Final PNG width |
+| `maxBytes` | `number` | `5 * 1024 * 1024` | Uploads above this are rejected before decoding |
+| `fonts` | `TypeFont[]` | all four | Which handwriting styles to offer |
+| `font` | `TypeFont` | first of `fonts` | Controlled style selection |
+| `onFontChange` | `(font: TypeFont) => void` | — | Fires when the person picks a style |
 | `locale` | `"en" \| "es"` | `"en"` | Language of labels and rejection messages |
 | `theme` | `"light" \| "dark"` | system | Forces the colour scheme |
 | `label` | `string` | localised | Accessible name of the tab list |

@@ -9,6 +9,7 @@ import {
   sign,
   rasterizeStroke,
   TYPE_FONTS,
+  detectFormat,
   type Bitmap,
   type PngEncoder,
   type Signature,
@@ -121,6 +122,11 @@ export type SignatureFieldProps = {
    * la página que lo hospeda.
    */
   theme?: "light" | "dark";
+  /**
+   * Tope de peso del archivo subido, en bytes. Por defecto 5 MB: por encima, el
+   * navegador sufre decodificando y la foto de una firma no lo necesita.
+   */
+  maxBytes?: number;
   /** Cursivas ofrecidas en el modo escribir. Por defecto, las cuatro del paquete. */
   fonts?: TypeFont[];
   /** Cursiva elegida (modo controlado). */
@@ -192,6 +198,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       maxWidth = 900,
       label,
       locale = "en",
+      maxBytes = 5 * 1024 * 1024,
       theme,
       fonts = [...TYPE_FONTS],
       font,
@@ -307,6 +314,25 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
             setError(texts.chooseFile!);
             return;
           }
+          // Formato y peso se comprueban ANTES de decodificar: decodificar una
+          // foto de 40 MB para luego rechazarla es trabajo tirado, y en un móvil
+          // se nota. `detectFormat` mira los magic bytes, no la extensión.
+          if (file.size > maxBytes) {
+            const message = rejectionMessage("too_heavy", locale);
+            setError(message);
+            onRejection?.("too_heavy", message);
+            return;
+          }
+          const cabecera = new Uint8Array(
+            await file.slice(0, 8).arrayBuffer()
+          );
+          if (detectFormat(cabecera) === null) {
+            const message = rejectionMessage("unsupported_format", locale);
+            setError(message);
+            onRejection?.("unsupported_format", message);
+            return;
+          }
+
           const image = await readBitmap(file).catch(() => null);
           if (!image) {
             const message = rejectionMessage("unreadable", locale);
