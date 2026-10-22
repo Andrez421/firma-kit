@@ -7,7 +7,7 @@
 import {
   rejectionMessage,
   sign,
-  rasterizeStroke,
+  rasterizeStrokes,
   strokeWidths,
   TYPE_FONTS,
   detectFormat,
@@ -513,7 +513,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       }
 
       // Pasada exacta: es la que define lo que se ve y lo que se guarda.
-      const bitmap = rasterizeStroke(points, CANVAS_SIZE, opciones);
+      const bitmap = rasterizeStrokes(strokes, CANVAS_SIZE, opciones);
       const image = ctx.createImageData(bitmap.width, bitmap.height);
       image.data.set(bitmap.data);
       ctx.putImageData(image, 0, 0);
@@ -647,7 +647,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
           result = await sign(
             // `exactOptionalPropertyTypes`: la clave solo existe si hay trazo
             // propio que pasar.
-            { mode: "draw", points, canvas: CANVAS_SIZE, ...(stroke ? { stroke } : {}) },
+            { mode: "draw", strokes, canvas: CANVAS_SIZE, ...(stroke ? { stroke } : {}) },
             effectiveEncoder,
             coreOptions
           );

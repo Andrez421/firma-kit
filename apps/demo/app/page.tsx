@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import type { Bitmap, Signature, Verdict, Verifier } from "@firma-kit/core";
+import { scaleToMaxSide, type Bitmap, type Signature, type Verdict, type Verifier } from "@firma-kit/core";
 import { SignatureField, toPngBlob, type SignatureFieldHandle } from "@firma-kit/react";
 
 import { Controls } from "./components/Controls.js";
@@ -22,6 +22,10 @@ const GATE_URL = process.env.NEXT_PUBLIC_GATE_URL ?? "http://127.0.0.1:8790";
 const GATE_TOKEN = process.env.NEXT_PUBLIC_GATE_TOKEN ?? "";
 const GATE_TIMEOUT_MS = 8_000;
 
+// El modelo reduce a 224px: mandar el RGBA de una foto de móvil son decenas de MB y el
+// servicio los rechaza por tamaño (413). Se reescala aquí, que es donde está la imagen.
+const GATE_MAX_SIDE = 1024;
+
 /** Los avisos del gate, en cualquiera de los dos idiomas. */
 type NotasDelGate = (typeof PAGE_COPY)[keyof typeof PAGE_COPY]["gateNotes"];
 
@@ -39,9 +43,10 @@ const THEME_KEY = "firma-kit-demo-theme";
 type FalloDelGate = Error & { reintentar?: boolean; esperaMs?: number };
 
 async function pedirVeredicto(imagen: Bitmap, notas: NotasDelGate): Promise<Verdict> {
-  const res = await fetch(`${GATE_URL}/verificar?w=${imagen.width}&h=${imagen.height}`, {
+  const pequena = scaleToMaxSide(imagen, GATE_MAX_SIDE);
+  const res = await fetch(`${GATE_URL}/verificar?w=${pequena.width}&h=${pequena.height}`, {
     method: "POST",
-    body: new Uint8Array(imagen.data),
+    body: new Uint8Array(pequena.data),
     ...(GATE_TOKEN ? { headers: { "x-gate-token": GATE_TOKEN } } : {}),
     signal: AbortSignal.timeout(GATE_TIMEOUT_MS),
   });
@@ -269,13 +274,8 @@ export default function Page() {
           <h2>{copy.result}</h2>
           {signature && previewUrl ? (
             <div className="result">
-              {/* eslint-disable-next-line @next/next/no-img-element -- object URL local, no remoto */}
-              <img
-                src={previewUrl}
-                alt={copy.result}
-                width={signature.width}
-                height={signature.height}
-              />
+              {/* La imagen ya se ve dentro del campo, justo arriba: aquí solo los datos.
+                  Repetirla era ruido en la misma pantalla. */}
               <div>
                 <dl>
                   <dt>{copy.mode}</dt>

@@ -207,14 +207,14 @@ describe("firmar — modo dibujar", () => {
 
   it("rechaza un lienzo sin trazo", async () => {
     const res = await sign(
-      { mode: "draw", points: [], canvas },
+      { mode: "draw", strokes: [], canvas },
       encoder()
     );
     expect(res).toMatchObject({ ok: false, reason: "empty" });
   });
 
   it("devuelve el trazo recortado dentro del ancho del contrato", async () => {
-    const res = await sign({ mode: "draw", points: stroke, canvas }, encoder());
+    const res = await sign({ mode: "draw", strokes: [stroke], canvas }, encoder());
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(res.signature.mode).toBe("draw");
