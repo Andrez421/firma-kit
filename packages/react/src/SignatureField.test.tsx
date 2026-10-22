@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { createRef } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
@@ -50,9 +50,11 @@ const measurer = {
 };
 
 describe("availableModes", () => {
-  it("hides type without a name and camera without a camera", () => {
-    expect(availableModes({ hasCamera: false })).toEqual(["draw", "upload"]);
-    expect(availableModes({ name: "Ana", hasCamera: true })).toEqual([
+  it("hides type without a name but keeps the camera", () => {
+    // La cámara se ofrece siempre: en escritorio el input `capture` degrada a
+    // selector de archivo, y ocultarla dejaba fuera a tablets y kioscos.
+    expect(availableModes({})).toEqual(["draw", "upload", "camera"]);
+    expect(availableModes({ name: "Ana" })).toEqual([
       "draw",
       "type",
       "upload",
@@ -61,22 +63,23 @@ describe("availableModes", () => {
   });
 
   it("keeps the caller's order and selection", () => {
-    expect(
-      availableModes({ modes: ["upload", "draw"], hasCamera: true })
-    ).toEqual(["upload", "draw"]);
+    expect(availableModes({ modes: ["upload", "draw"] })).toEqual([
+      "upload",
+      "draw",
+    ]);
   });
 });
 
 describe("<SignatureField />", () => {
-  it("offers only the possible modes", () => {
+  it("offers every mode, camera included, and hides type without a name", () => {
     render(<SignatureField />);
-    expect(screen.getAllByRole("tab")).toHaveLength(2);
-    expect(screen.queryByRole("tab", { name: "Type" })).toBeNull();
+    const tabs = screen.getAllByRole("tab").map((tab) => tab.textContent);
+    expect(tabs).toEqual(["Draw", "Upload", "Camera"]);
   });
 
   it("offers type when there is a name", () => {
     render(<SignatureField name="Ana" />);
-    expect(screen.getAllByRole("tab")).toHaveLength(3);
+    expect(screen.getAllByRole("tab")).toHaveLength(4);
     expect(screen.getByRole("tab", { name: "Type" })).toBeTruthy();
   });
 
@@ -360,8 +363,10 @@ describe("<SignatureField />", () => {
     );
     fireEvent.click(screen.getByRole("tab", { name: "Type" }));
 
-    // Las cuatro del paquete, como radios de verdad.
-    const opciones = screen.getAllByRole("radio");
+    // Las cuatro del paquete, como radios de verdad, dentro de su grupo (el modo
+    // escribir tiene además el grupo de líneas).
+    const grupo = screen.getByRole("radiogroup", { name: /handwriting/i });
+    const opciones = within(grupo).getAllByRole("radio");
     expect(opciones.map((o) => o.getAttribute("value"))).toEqual([
       "Caveat",
       "Pacifico",
@@ -369,22 +374,25 @@ describe("<SignatureField />", () => {
       "Sacramento",
     ]);
 
-    fireEvent.click(screen.getByRole("radio", { name: "Pacifico" }));
+    fireEvent.click(within(grupo).getByRole("radio", { name: "Pacifico" }));
     fireEvent.click(screen.getByRole("button", { name: "Use this signature" }));
     await waitFor(() => expect(familias.length).toBeGreaterThan(0));
     expect(familias.at(-1)).toBe("Pacifico");
   });
 
-  it("hides the chooser when only one style is offered", () => {
+  it("hides the style chooser when only one style is offered", () => {
     render(<SignatureField name="Ana" fonts={["Caveat"]} />);
     fireEvent.click(screen.getByRole("tab", { name: "Type" }));
-    expect(screen.queryAllByRole("radio")).toHaveLength(0);
+    expect(screen.queryByRole("radiogroup", { name: /handwriting/i })).toBeNull();
+    // El grupo de líneas sigue disponible.
+    expect(screen.getByRole("radiogroup", { name: /lines/i })).toBeTruthy();
   });
 
   it("lets the parent control the style", () => {
     render(<SignatureField name="Ana" font="Great Vibes" onFontChange={() => {}} />);
     fireEvent.click(screen.getByRole("tab", { name: "Type" }));
-    const elegida = screen
+    const grupo = screen.getByRole("radiogroup", { name: /handwriting/i });
+    const elegida = within(grupo)
       .getAllByRole("radio")
       .find((o) => (o as HTMLInputElement).checked);
     expect(elegida?.getAttribute("value")).toBe("Great Vibes");
@@ -398,6 +406,45 @@ describe("<SignatureField />", () => {
     expect(
       porDefecto.container.querySelector(".signature")?.getAttribute("data-size")
     ).toBe("md");
+  });
+
+  it("renders a live preview of the typed name", () => {
+    render(<SignatureField name="Ana Muñoz" />);
+    fireEvent.click(screen.getByRole("tab", { name: "Type" }));
+    expect(screen.getByLabelText(/live preview/i)).toBeTruthy();
+  });
+
+  it("sizes the written sheet by the chosen number of lines", async () => {
+    let alto = 0;
+    const rasterizer: TextRasterizer = {
+      rasterize: (_lineas, _estilo, _interlineado, caja) => {
+        alto = caja.height;
+        const data = new Uint8ClampedArray(caja.width * caja.height * 4).fill(255);
+        for (let y = 20; y < 40; y++) {
+          for (let x = 20; x < 200; x++) {
+            const i = (y * caja.width + x) * 4;
+            data[i] = 20;
+            data[i + 1] = 20;
+            data[i + 2] = 20;
+          }
+        }
+        return { data, width: caja.width, height: caja.height };
+      },
+    };
+    render(
+      <SignatureField
+        name="Ana Muñoz"
+        maxLines={1}
+        encoder={encoder()}
+        measurer={measurer}
+        rasterizer={rasterizer}
+      />
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Type" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use this signature" }));
+    await waitFor(() => expect(alto).toBeGreaterThan(0));
+    // Una línea usa una hoja más baja que dos.
+    expect(alto).toBe(120);
   });
 
   it("lets the host override the theme tokens inline", () => {

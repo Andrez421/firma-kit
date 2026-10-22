@@ -10,6 +10,7 @@ import {
   rasterizeStroke,
   TYPE_FONTS,
   detectFormat,
+  layoutTypedName,
   type Bitmap,
   type PngEncoder,
   type Signature,
@@ -62,7 +63,10 @@ type FieldText = {
   hint: string;
   filePreviewAlt: string;
   previewAlt: string;
-  typeHint: string;
+  linesLabel: string;
+  oneLine: string;
+  twoLines: string;
+  typePreviewAlt: string;
   typeEmpty: string;
   chooseFile: string;
   upload: string;
@@ -77,7 +81,10 @@ const FIELD_TEXT: Record<Locale, FieldText> = {
   en: {
     canvas: "Area to draw the signature with a finger or pointer",
     fontLabel: "Handwriting style",
-    typeHint: "Your name will be written in cursive",
+    linesLabel: "Lines",
+    oneLine: "One line",
+    twoLines: "Two lines",
+    typePreviewAlt: "Live preview of your name in the chosen handwriting",
     typeEmpty: "Type your name to see it in cursive.",
     chooseFile: "Choose an image before continuing.",
     upload: "Upload an image of the signature",
@@ -94,7 +101,10 @@ const FIELD_TEXT: Record<Locale, FieldText> = {
   es: {
     canvas: "Zona para dibujar la firma con el dedo o el puntero",
     fontLabel: "Estilo de letra",
-    typeHint: "Tu nombre se escribirá en cursiva",
+    linesLabel: "Líneas",
+    oneLine: "Una línea",
+    twoLines: "Dos líneas",
+    typePreviewAlt: "Vista previa de tu nombre con la letra elegida",
     typeEmpty: "Escribe tu nombre para verlo en cursiva.",
     chooseFile: "Elige una imagen antes de continuar.",
     upload: "Subir imagen de la firma",
@@ -155,6 +165,11 @@ export type SignatureFieldProps = {
    * que siguen en 44px como mínimo.
    */
   size?: "sm" | "md" | "lg";
+  /**
+   * Líneas que puede ocupar el nombre escrito. Por defecto 2; con 1 el nombre se
+   * reduce hasta caber en una sola línea y la hoja se hace más baja.
+   */
+  maxLines?: 1 | 2;
   /** Cursivas ofrecidas en el modo escribir. Por defecto, las cuatro del paquete. */
   fonts?: TypeFont[];
   /** Cursiva elegida (modo controlado). */
@@ -182,29 +197,21 @@ export type SignatureFieldHandle = {
 };
 
 /**
- * Which modes can honestly be offered: `type` needs a name and `camera` needs a
- * camera. Hiding an impossible mode beats rendering a button that fails.
+ * Which modes can be offered: `type` needs a name. `camera` is always offered
+ * when the caller asks for it — the input uses `capture`, which on a desktop
+ * browser degrades to a file picker, so hiding the tab there would take the mode
+ * away from the very devices that can use it (a tablet with a camera in a shared
+ * kiosk browser, for instance).
  */
 export function availableModes(options: {
   // `| undefined` explícito: quien llama pasa props opcionales tal cual, y con
   // `exactOptionalPropertyTypes` eso no es lo mismo que una clave ausente.
   modes?: SignatureMode[] | undefined;
   name?: string | undefined;
-  hasCamera: boolean;
 }): SignatureMode[] {
   const requested = options.modes?.length ? options.modes : MODE_ORDER;
   const withName = Boolean(options.name?.trim());
-  return requested.filter((mode) => {
-    if (mode === "type") return withName;
-    if (mode === "camera") return options.hasCamera;
-    return true;
-  });
-}
-
-function hasCameraSupport(): boolean {
-  return Boolean(
-    (globalThis as { navigator?: Navigator }).navigator?.mediaDevices
-  );
+  return requested.filter((mode) => (mode === "type" ? withName : true));
 }
 
 /** Decodifica un file del usuario a RGBA. Sin canvas, no hay signature. */
@@ -235,6 +242,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       locale = "en",
       maxBytes = 5 * 1024 * 1024,
       size = "md",
+      maxLines = 2,
       stroke,
       theme,
       fonts = [...TYPE_FONTS],
@@ -248,7 +256,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
     } = props;
 
     const available = useMemo(
-      () => availableModes({ modes, name, hasCamera: hasCameraSupport() }),
+      () => availableModes({ modes, name }),
       [modes, name]
     );
     const [mode, setMode] = useState<SignatureMode>(() => {
@@ -266,6 +274,13 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
     // La cursiva elegida: controlada por el padre si pasa `font`, si no interna.
     const [chosenFont, setChosenFont] = useState<TypeFont>(font ?? fonts[0] ?? "Caveat");
     const activeFont = font ?? chosenFont;
+    const [lines, setLines] = useState<1 | 2>(maxLines);
+    // La hoja del modo escribir se adapta a las líneas: una firma de una línea no
+    // necesita el alto de dos.
+    const typeCanvas = useMemo(
+      () => ({ width: CANVAS_SIZE.width, height: lines === 1 ? 120 : 200 }),
+      [lines]
+    );
 
     const drawing = useRef(false);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -302,6 +317,51 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
     // Vista previa de lo que se va a guardar: antes solo había un texto de
     // "lista", así que la persona firmaba a ciegas. El object URL se revoca al
     // cambiar, igual que en el playground.
+    // Preview en vivo del modo escribir: se pinta con el mismo layout y el mismo
+    // rasterizador que la firma final, así que lo que se ve es lo que se guarda.
+    const typePreviewRef = useRef<HTMLCanvasElement | null>(null);
+    useEffect(() => {
+      if (mode !== "type") return;
+      const canvas = typePreviewRef.current;
+      if (!canvas) return;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      let cancelado = false;
+
+      const pintar = async () => {
+        // Sin la fuente cargada, medir daría el ancho de la de reserva.
+        await loadFont(activeFont, 72);
+        if (cancelado) return;
+        canvas.width = typeCanvas.width;
+        canvas.height = typeCanvas.height;
+        const texto = (name ?? "").trim();
+        const layout = texto
+          ? layoutTypedName(texto, typeCanvas, effectiveMeasurer, {
+              family: activeFont,
+              maxLines: lines,
+            })
+          : null;
+        if (!layout) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          return;
+        }
+        const bitmap = effectiveRasterizer.rasterize(
+          layout.lines,
+          layout.style,
+          layout.lineHeight,
+          typeCanvas
+        );
+        if (!bitmap) return;
+        const imagen = ctx.createImageData(bitmap.width, bitmap.height);
+        imagen.data.set(bitmap.data);
+        ctx.putImageData(imagen, 0, 0);
+      };
+      void pintar();
+      return () => {
+        cancelado = true;
+      };
+    }, [mode, name, activeFont, lines, typeCanvas, effectiveMeasurer, effectiveRasterizer]);
+
     // Vista previa del archivo elegido: antes solo se veía el nombre del input
     // nativo, así que se confirmaba a ciegas también aquí.
     const fileUrl = useMemo(
@@ -372,10 +432,11 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
             {
               mode: "type",
               text: (name ?? "").trim(),
-              canvas: CANVAS_SIZE,
+              canvas: typeCanvas,
               measurer: effectiveMeasurer,
               rasterizer: effectiveRasterizer,
               font: activeFont,
+              maxLines: lines,
             },
             effectiveEncoder,
             coreOptions
@@ -607,11 +668,43 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
                   ))}
                 </div>
               ) : null}
-              <p className="signature__preview" aria-live="polite">
-                {name?.trim()
-                  ? `${texts.typeHint}: ${name.trim()}`
-                  : texts.typeEmpty}
-              </p>
+              <div
+                className="signature__line-options"
+                role="radiogroup"
+                aria-label={texts.linesLabel}
+              >
+                {([1, 2] as const).map((opcion) => (
+                  <label
+                    key={opcion}
+                    className={
+                      opcion === lines
+                        ? "signature__line signature__line--active"
+                        : "signature__line"
+                    }
+                  >
+                    <input
+                      type="radio"
+                      name={`${baseId}-lines`}
+                      checked={opcion === lines}
+                      onChange={() => setLines(opcion)}
+                    />
+                    {opcion === 1 ? texts.oneLine : texts.twoLines}
+                  </label>
+                ))}
+              </div>
+              <div className="signature__canvas-wrap">
+                {!name?.trim() ? (
+                  <p className="signature__hint" aria-hidden="true">
+                    {texts.typeEmpty}
+                  </p>
+                ) : null}
+                <canvas
+                  ref={typePreviewRef}
+                  className="signature__canvas signature__type-preview"
+                  style={{ height: typeCanvas.height }}
+                  aria-label={texts.typePreviewAlt}
+                />
+              </div>
             </div>
           ) : null}
 
