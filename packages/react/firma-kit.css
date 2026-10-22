@@ -99,6 +99,31 @@
   width: 100%;
 }
 
+.signature__font-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+/* Cada opción se dibuja con su propia cursiva: elegir a ciegas un nombre de
+   fuente no dice nada. */
+.signature__font {
+  align-items: center;
+  border: 1px solid var(--signature-border);
+  border-radius: var(--signature-radius);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 1.6rem;
+  gap: 8px;
+  min-height: 44px;
+  padding: 8px 14px;
+}
+
+.signature__font--active {
+  border-color: var(--signature-focus);
+  box-shadow: inset 0 -2px 0 var(--signature-focus);
+}
+
 .signature__preview {
   color: var(--signature-muted);
   margin: 0;

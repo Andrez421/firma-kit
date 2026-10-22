@@ -12,6 +12,7 @@ import {
   layoutTypedName,
   type TextMeasurer,
   type TextRasterizer,
+  type TypeFont,
 } from "./modes/type.js";
 import { extractSignature, flattenInk } from "./ink/pixels.js";
 import type {
@@ -41,6 +42,8 @@ export type SignatureInput =
       canvas: { width: number; height: number };
       measurer: TextMeasurer;
       rasterizer: TextRasterizer;
+      /** Cursiva elegida. Sin ella, el layout usa la de por defecto (Caveat). */
+      font?: TypeFont;
     };
 
 /** Ancho del PNG final: una celda impresa de ~90px a 300dpi. */
@@ -104,7 +107,8 @@ export async function sign(
       const layout = layoutTypedName(
         input.text,
         input.canvas,
-        input.measurer
+        input.measurer,
+        input.font ? { family: input.font } : {}
       );
       if (!layout) return rejection("empty");
       const painted = input.rasterizer.rasterize(
