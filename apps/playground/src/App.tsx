@@ -11,7 +11,13 @@ type Tema = "auto" | "light" | "dark";
 
 // Servicio local del gate (`pnpm --filter @firma-kit/eval serve`). El modelo vive
 // en Node: el navegador no puede cargar 201 MB de ONNX en cada visita.
-const GATE_URL = import.meta.env["VITE_GATE_URL"] ?? "http://127.0.0.1:8790";
+//
+// El host sale de la página, no de `127.0.0.1`: abierto desde el móvil por
+// Tailscale, `127.0.0.1` sería el localhost del teléfono y la verificación
+// fallaría en silencio.
+const GATE_URL =
+  import.meta.env["VITE_GATE_URL"] ??
+  `${window.location.protocol}//${window.location.hostname}:8790`;
 
 // Direcciones de color para probar el contrato de personalización sin escribir
 // una hoja de estilos: papel/tinta y un acento distinto por preset.
@@ -52,14 +58,22 @@ export function App() {
   const verifier = useMemo(
     () => ({
       verify: async (imagen: Bitmap): Promise<Verdict> => {
-        const res = await fetch(
-          `${GATE_URL}/verificar?w=${imagen.width}&h=${imagen.height}`,
-          // Copia con su propio ArrayBuffer: `Uint8Array<ArrayBufferLike>` no es
-          // un `BodyInit` válido en TypeScript.
-          { method: "POST", body: new Uint8Array(imagen.data) }
-        );
-        if (!res.ok) throw new Error("el gate no respondió");
-        return (await res.json()) as Verdict;
+        try {
+          const res = await fetch(
+            `${GATE_URL}/verificar?w=${imagen.width}&h=${imagen.height}`,
+            // Copia con su propio ArrayBuffer: `Uint8Array<ArrayBufferLike>` no es
+            // un `BodyInit` válido en TypeScript.
+            { method: "POST", body: new Uint8Array(imagen.data) }
+          );
+          if (!res.ok) throw new Error(`el gate respondió ${res.status}`);
+          return (await res.json()) as Verdict;
+        } catch (error) {
+          // El campo ignora a propósito los fallos del verificador para no dejar a
+          // nadie sin firmar; aquí, en el arnés, ese silencio se convierte en un
+          // aviso visible: si no hay gate, no se está validando nada.
+          setGate("sin servicio");
+          throw error;
+        }
       },
     }),
     []

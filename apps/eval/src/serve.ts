@@ -104,4 +104,9 @@ if (process.argv[1]?.endsWith("serve.js")) {
     host: process.env["GATE_HOST"] ?? "127.0.0.1",
   });
   console.log(`gate escuchando en ${url} (modelos en ${modelsDir()})`);
+  if (process.env["GATE_HOST"] === "0.0.0.0") {
+    console.log(
+      "expuesto en todas las interfaces: es un servicio de desarrollo sin autenticación, úsalo solo en una red de confianza"
+    );
+  }
 }
