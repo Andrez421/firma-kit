@@ -12,6 +12,7 @@ export {
   type SecondOpinion,
   type TwoTierOptions,
 } from "./verifier.js";
+export { createClipGate, LOCAL_MODEL_ID, SIGNATURE_PROMPTS, type ClipGateOptions } from "./gate.js";
 export { MODELS, modelsDir, type ModelFile, type ModelSpec } from "./models.js";
 export {
   checkModels,
