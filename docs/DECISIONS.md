@@ -1,211 +1,210 @@
-# Decisiones (ADR)
+# Decisions (ADR)
 
-Formato corto: contexto → decisión → consecuencias. Se añade al final; no se
-reescribe el pasado.
+Short format: context → decision → consequences. New entries go at the end; the past
+is not rewritten.
 
-## ADR-001 — Monorepo con pnpm + Turborepo, núcleo sin dependencias
+## ADR-001 — Monorepo with pnpm + Turborepo, dependency-free core
 
-**Contexto.** GCly ya es un monorepo con pnpm y Turborepo; pgaa y
-registro_asistencia son aplicaciones sueltas. El módulo tiene que servir a los
-tres.
+**Context.** GCly is already a monorepo with pnpm and Turborepo; pgaa and
+registro_asistencia are standalone applications. The module has to serve all three.
 
-**Decisión.** Monorepo pnpm con paquetes `core` / `react` / `verify`. `core` sin
-dependencias de runtime (ni DOM ni red).
+**Decision.** A pnpm monorepo with `core` / `react` / `verify` packages. `core` has no
+runtime dependencies (no DOM, no network).
 
-**Consecuencias.** Se puede consumir desde el navegador, una API, un worker o un
-test de Node sin arrastrar React. Publicar `core` es barato; publicar `react`
-exige decidir la estrategia de estilos.
+**Consequences.** It can be consumed from a browser, an API, a worker or a Node test
+without dragging React along. Publishing `core` is cheap; publishing `react` forces a
+decision about the styling strategy.
 
-## ADR-002 — El pipeline de tinta se porta, no se reescribe
+## ADR-002 — The ink pipeline is ported, not rewritten
 
-**Contexto.** registro_asistencia tiene el único pipeline validado contra datos
-reales (1 018 firmas). pgaa tiene otro sin pruebas; GCly no tiene.
+**Context.** registro_asistencia has the only pipeline validated against real data
+(1 018 signatures). pgaa has another one with no tests; GCly has none.
 
-**Decisión.** Se porta `extractSignature` / `flattenInk` / `stretchLevels` con
-sus 25 tests, como `packages/core/src/tinta`.
+**Decision.** `extractSignature` / `flattenInk` / `stretchLevels` are ported with their
+25 tests, as `packages/core/src/tinta`.
 
-**Consecuencias.** El nuevo proyecto arranca con la parte más difícil ya
-resuelta. Cualquier mejora debe entrar por un test que hoy falla.
+**Consequences.** The new project starts with the hardest part already solved. Any
+improvement has to come in through a test that fails today.
 
-## ADR-003 — Verificación visual: MobileCLIP-S0 (gate) + SmolVLM-256M (segunda opinión)
+## ADR-003 — Visual verification: MobileCLIP-S0 (gate) + SmolVLM-256M (second opinion)
 
-**Contexto.** Se evaluaron modelos de decisión sobre texto (Jev, Laya, Kev):
-ninguno ve imágenes, así que no resuelven "¿esto es una firma?". OCR se
-descartó: una foto de un objeto no tiene texto. Se necesita visión, en CPU y
-on-premise.
+**Context.** Text-decision models were evaluated (Jev, Laya, Kev): none of them sees
+images, so none answers "is this a signature?". OCR was discarded: a photo of an object
+contains no text. Vision is needed, on CPU and on-premise.
 
-**Decisión.** Dos niveles. Gate barato con zero-shot imagen↔texto
-(MobileCLIP-S0 int8, ~90 MB, ~50 ms) y segunda opinión con un VLM de 256M
-(~300 MB, ~1–2 s) solo cuando el gate es ambiguo.
+**Decision.** Two levels. A cheap gate with zero-shot image↔text (MobileCLIP-S0 int8,
+~90 MB, ~50 ms) and a second opinion with a 256M VLM (~300 MB, ~1–2 s) only when the
+gate is ambiguous.
 
-**Consecuencias.** El caso normal cuesta decenas de milisegundos; el caso dudoso
-paga segundos. Sin GPU y sin sacar la imagen de la infraestructura. Los umbrales
-no se fijan hasta tener 30–50 negativos reales (ver `docs/ARCHITECTURE.es.md`).
+**Consequences.** The normal case costs tens of milliseconds; the doubtful one pays
+seconds. No GPU, and the image never leaves the caller's infrastructure. Thresholds are
+not fixed until there are 30–50 real negatives (see `docs/ARCHITECTURE.es.md`).
 
-## ADR-004 — Idioma
+## ADR-004 — Language
 
-**Contexto.** Quien mantiene el proyecto trabaja en español; el ecosistema open
-source lee inglés.
+**Context.** Whoever maintains the project works in Spanish; the open source ecosystem
+reads English.
 
-**Decisión.** Código, identificadores y comentarios en inglés (los artefactos
-técnicos por defecto); documentación pública con README en inglés y español;
-mensajes de usuario del paquete en español con i18n en fase 4.
+**Decision.** Code, identifiers and comments in English (technical artefacts by
+default); public documentation with a README in English and Spanish; package user
+messages in Spanish with i18n in phase 4.
 
-**Consecuencias.** Un solo idioma para el código y dos puertas de entrada para
-la documentación.
+**Consequences.** One language for code and two entry points for documentation.
 
-## ADR-005 — El contrato de `core` usa puertos para todo lo que no es puro
+## ADR-005 — The `core` contract uses ports for everything that is not pure
 
-**Contexto.** Codificar PNG necesita `canvas.toBlob` (navegador) o `sharp`
-(servidor); medir y pintar texto necesita `fillText`; verificar necesita modelos
-de cientos de megabytes. Ninguna de las tres cosas cabe en un paquete sin DOM,
-sin React y sin red (ADR-001).
+**Context.** Encoding a PNG needs `canvas.toBlob` (browser) or `sharp` (server);
+measuring and painting text needs `fillText`; verifying needs models of hundreds of
+megabytes. None of the three fits in a package without DOM, without React and without
+network (ADR-001).
 
-**Decisión.** `core` declara los puertos `EncodePng`, `MedidorTexto`,
-`TextRasterizer` y `Verificador`, más `firmar(entrada, encoder, opciones)` como
-entrada única. `Firma.png` es `Uint8Array` (no `Blob`): el mismo tipo sirve en
-Node y en el navegador, sin copia. La presencia de `verificador` —no un booleano
-aparte— es lo que activa la verificación.
+**Decision.** `core` declares the `EncodePng`, `MedidorTexto`, `TextRasterizer` and
+`Verificador` ports, plus `firmar(entrada, encoder, opciones)` as the single entry
+point. `Firma.png` is a `Uint8Array` (not a `Blob`): the same type works in Node and in
+the browser, with no copy. The presence of `verificador` — not a separate boolean — is
+what turns verification on.
 
-**Consecuencias.** `react` y un futuro `@firma-kit/node` traen los adaptadores
-cableados. Un contexto 2D ausente rechaza la promesa en vez de devolver un PNG
-falso. El contrato se podía cambiar sin coste: nada estaba publicado.
+**Consequences.** `react` and a future `@firma-kit/node` ship the adapters wired up. A
+missing 2D context rejects the promise instead of returning a fake PNG. The contract
+could be changed at no cost: nothing was published.
 
-## ADR-006 — Modo escribir: layout puro y cuatro cursivas OFL self-hosted
+## ADR-006 — Type mode: pure layout and four self-hosted OFL cursives
 
-**Contexto.** GCly resolvió el modo escribir con cuatro fuentes de Google
-cargadas en runtime y `html-to-image`. Dependencia externa, salto de layout y un
-motor de captura pesado para pintar texto.
+**Context.** GCly solved type mode with four Google Fonts loaded at runtime and
+`html-to-image`. An external dependency, a layout shift, and a heavy capture engine for
+painting text.
 
-**Decisión.** El layout (líneas, tamaño, interlineado) vive en `core` y decide
-con un medidor inyectado; el pintado entra por `TextRasterizer`. Fuentes: las
-mismas cuatro de GCly (Caveat, Pacifico, Great Vibes, Sacramento), OFL,
-servidas como woff2 desde el paquete, subconjunto `latin` de Google Fonts.
+**Decision.** The layout (lines, size, line height) lives in `core` and decides with an
+injected measurer; painting comes in through `TextRasterizer`. Fonts: the same four from
+GCly (Caveat, Pacifico, Great Vibes, Sacramento), OFL, served as woff2 from the package,
+`latin` subset of Google Fonts.
 
-**Consecuencias.** Cero peticiones a Google Fonts en runtime y cero
-`html-to-image`. El subconjunto `latin-ext` se descarta a propósito: no incluye
-`á` ni `ñ`, así que «Muñoz» saldría mutilado. 142 KB de fuentes en el paquete.
+**Consequences.** Zero requests to Google Fonts at runtime and zero `html-to-image`. The
+`latin-ext` subset is discarded on purpose: it does not include `á` or `ñ`, so «Muñoz»
+would come out mutilated. 142 KB of fonts in the package.
 
-## ADR-007 — Flags estrictos sobre el pipeline portado
+## ADR-007 — Strict flags on the ported pipeline
 
-**Contexto.** ADR-002 dice que el pipeline validado contra 1 018 firmas no se
-reescribe. `noUncheckedIndexedAccess` y `exactOptionalPropertyTypes` obligan a
-tocar 53 accesos indexados.
+**Context.** ADR-002 says the pipeline validated against 1 018 signatures is not
+rewritten. `noUncheckedIndexedAccess` and `exactOptionalPropertyTypes` force 53 indexed
+accesses to be touched.
 
-**Decisión.** Se activan en todo el repo. Las ediciones permitidas al pipeline
-son solo declarativas (aserción de un índice acotado por construcción), van en
-un commit aislado y se prueban con los tests existentes **más** una comparación
-bit a bit contra la versión anterior sobre imágenes generadas.
+**Decision.** They are enabled across the repo. The edits allowed to the pipeline are
+declarative only (asserting an index that is bounded by construction), they go in an
+isolated commit, and they are tested with the existing tests **plus** a bit-for-bit
+comparison against the previous version on generated images.
 
-**Consecuencias.** El código validado sigue siendo el mismo de verdad, y hay una
-prueba —no una promesa— de que el cambio fue de tipos.
+**Consequences.** The validated code really is the same, and there is a proof — not a
+promise — that the change was about types.
 
-## ADR-008 — Capa React sin control externo obligatorio y con variables CSS
+## ADR-008 — React layer without mandatory external control, styled with CSS variables
 
-**Contexto.** El componente tiene que servir a un formulario con estado propio y
-a una integración de dos líneas, dentro de un proyecto con Tailwind y en otro sin
-él.
+**Context.** The component has to serve a form with its own state and a two-line
+integration, inside a project with Tailwind and in another one without it.
 
-**Decisión.** No controlado por defecto (`onFirma`, `onRechazo`, ref imperativo
-`limpiar`/`confirmar`/`abrirModo`), con `value` opcional para el caso
-formulario. Estilos con tokens `--firma-*` en `firma-kit.css`, sin Tailwind y
-sin CSS modules. `"use client"` en la entrada, peer `react >=18.3`, y subpath
-`./server` con tipos solamente para leer el contrato desde un Server Component.
+**Decision.** Uncontrolled by default (`onFirma`, `onRechazo`, imperative ref
+`limpiar`/`confirmar`/`abrirModo`), with an optional `value` for the form case. Styles
+with `--firma-*` tokens in `firma-kit.css`, no Tailwind and no CSS modules. `"use client"`
+in the entry, peer `react >=18.3`, and a `./server` subpath with types only, to read the
+contract from a Server Component.
 
-**Consecuencias.** Tailwind 4 como preset queda como mejora opcional, no como
-dependencia. Un modo imposible no se ofrece: `escribir` sin nombre y `foto` sin
-cámara desaparecen en lugar de fallar al pulsar.
+**Consequences.** Tailwind 4 as a preset stays an optional improvement, not a
+dependency. An impossible mode is not offered: `escribir` without a name and `foto`
+without a camera disappear instead of failing on click.
 
-## ADR-009 — No se publica en npm hasta cerrar la fase 2
+## ADR-009 — Nothing is published to npm until phase 2 closes
 
-**Contexto.** Los nombres `firma-kit`, `@firma-kit/core` y `@firma-kit/react`
-están libres en el registro. Publicar congela el contrato.
+**Context.** The names `firma-kit`, `@firma-kit/core` and `@firma-kit/react` are free in
+the registry. Publishing freezes the contract.
 
-**Decisión.** Nada de `npm publish` hasta que la fase 2 esté cerrada con
-`react` funcionando. Aun así se reserva el scope `@firma-kit` en npm.
+**Decision.** No `npm publish` until phase 2 is closed with `react` working. The
+`@firma-kit` scope is reserved in npm anyway.
 
-**Consecuencias.** Para consumir hoy: dependencia por ruta o `git`. Un `0.1.0`
-con `core` y `react` juntos cuenta una sola historia de instalación.
+**Consequences.** To consume it today: a path or `git` dependency. A `0.1.0` with `core`
+and `react` together tells a single installation story.
 
-## ADR-010 — CI mínimo ahora, publicación automatizada después
+## ADR-010 — Minimal CI now, automated publication later
 
-**Contexto.** El repositorio es público y no tenía CI. Con `0.1.0` fuera, un
-`main` roto se propaga a quien lo instale.
+**Context.** The repository is public and had no CI. With `0.1.0` out, a broken `main`
+spreads to whoever installs it.
 
-**Decisión.** GitHub Actions con `pnpm install --frozen-lockfile`,
-`pnpm type-check`, `pnpm test` y `pnpm build`, en Node 22 y 24. `changesets`
-llega en la fase 4, cuando haya algo que publicar.
+**Decision.** GitHub Actions with `pnpm install --frozen-lockfile`, `pnpm type-check`,
+`pnpm test` and `pnpm build`, on Node 22 and 24. `changesets` arrives in phase 4, when
+there is something to publish.
 
-## ADR-011 — `verify` en proceso, con descarga explícita y umbrales versionados
+## ADR-011 — `verify` in process, with explicit download and versioned thresholds
 
-**Contexto.** Los modelos no pueden empaquetarse (licencias y tamaño) y la
-imagen no puede salir de la infraestructura del llamador.
+**Context.** The models cannot be packaged (licences and size) and the image cannot
+leave the caller's infrastructure.
 
-**Decisión.** `@firma-kit/verify` implementa el puerto `Verificador` en el
-proceso del llamador: gate con `transformers.js` sobre los ONNX int8 de
-MobileCLIP-S0 (≈55 MB) y segunda opinión con `node-llama-cpp` sobre SmolVLM-256M
-`Q4_K_M` + `mmproj` (≈300 MB, Apache-2.0). Los modelos se traen solo con
-`firma-kit-verify models pull`, con SHA-256 pinneado y un `doctor` de
-diagnóstico. Los umbrales viven en `umbrales.ts` con `UMBRALES_VERSION`, y
-cambiarlos exige el reporte de evaluación archivado en `docs/eval/`.
+**Decision.** `@firma-kit/verify` implements the `Verificador` port in the caller's
+process: a gate with `transformers.js` over the MobileCLIP-S0 int8 ONNX files (~55 MB)
+and a second opinion with `node-llama-cpp` over SmolVLM-256M `Q4_K_M` + `mmproj`
+(~300 MB, Apache-2.0). Models are fetched only with `firma-kit-verify models pull`, with
+pinned SHA-256 and a diagnostic `doctor`. Thresholds live in `umbrales.ts` with
+`UMBRALES_VERSION`, and changing them requires the evaluation report archived in
+`docs/eval/`.
 
-**Consecuencias.** El sidecar es una decisión de despliegue del consumidor, no
-un requisito del paquete. Un verificador que falla no bloquea a la persona: la
-verificación es una salvaguarda extra.
+**Consequences.** The sidecar is a deployment decision of the consumer, not a
+requirement of the package. A verifier that fails does not block the person: verification
+is an extra safeguard.
 
-## ADR-012 — El corpus de evaluación no vive en el repositorio público
+## ADR-012 — The evaluation corpus does not live in the public repository
 
-**Contexto.** Las 1 018 firmas reales son trazos de personas identificables, y
-con un solo negativo no se pueden fijar umbrales.
+**Context.** The 1 018 real signatures are strokes of identifiable people, and with a
+single negative no threshold can be fixed.
 
-**Decisión.** `apps/eval` lee el corpus por `FIRMA_KIT_EVAL_CORPUS`. Al repo
-público solo entran fixtures sintéticos (factura, pantallazo, PDF impreso,
-cuadrícula, hoja vacía, objeto) y datasets públicos con licencia verificada una
-por una. Cero documentos reales de personas.
+**Decision.** `apps/eval` reads the corpus through `FIRMA_KIT_EVAL_CORPUS`. Only
+synthetic fixtures (invoice, screenshot, printed PDF, grid, empty sheet, object) and
+public datasets with a licence verified one by one enter the public repo. Zero real
+documents of real people.
 
-**Consecuencias.** La métrica se valida en local; el arnés y los sintéticos se
-revisan en público. El arnés sale con código 1 si los falsos rechazos superan el
-2 % o los falsos aceptados bajan del 90 %.
+**Consequences.** The metric is validated locally; the harness and the synthetic
+fixtures are reviewed in public. The harness exits with code 1 if false rejections
+exceed 2 % or false accepts fall below 90 %.
 
-## ADR-004 (enmienda) — Inglés primario, español completo
+## ADR-004 (amendment) — English primary, complete Spanish
 
-**Contexto.** La redacción original decía «código, identificadores y comentarios
-en inglés», pero el andamiaje había fijado el contrato en español (`Firma`,
-`OpcionesFirma`, `MotivoRechazo`) y los valores de los enums también
-(`"sin_tinta"`, `"dibujar"`). Un contrato mitad en cada idioma no se puede
-publicar: quien lo consuma escribe `resultado.firma.modo === "dibujar"` en un
-código que se llama `extractSignature`.
+**Context.** The original wording said "code, identifiers and comments in English", but
+the scaffolding had fixed the contract in Spanish (`Firma`, `OpcionesFirma`,
+`MotivoRechazo`) and so had the enum values (`"sin_tinta"`, `"dibujar"`). A contract half
+in each language cannot be published: whoever consumes it writes
+`resultado.firma.modo === "dibujar"` inside code called `extractSignature`.
 
-**Decisión.** El inglés es el idioma primario del código y del contrato público:
-tipos, campos, funciones, valores de enum, nombres de archivo, clases CSS y
-títulos de test. El español se mantiene completo donde lo ve una persona: los
-mensajes de rechazo (`messages/es.ts`), las etiquetas de la interfaz y la
-documentación de producto. Ambos idiomas se sirven desde el paquete, y el idioma
-por defecto es el inglés (`locale: "en"`), con `"es"` como opción explícita.
+**Decision.** English is the primary language of the code and the public contract: types,
+fields, functions, enum values, file names, CSS classes and test titles. Spanish is kept
+complete where a person sees it: the rejection messages (`messages/es.ts`), the interface
+labels and the product documentation. Both languages are served from the package, and the
+default language is English (`locale: "en"`), with `"es"` as an explicit option.
 
-**Consecuencias.** Renombrar ahora costó un commit grande y no costó nada a
-nadie: no había nada publicado. A partir de la publicación, el contrato es
-estable y los cambios de nombre son breaking. Queda pendiente traducir al inglés
-los documentos internos de `docs/` (producto, arquitectura, relevamiento), que
-hoy siguen en español.
+**Consequences.** Renaming now cost one large commit and cost nobody anything: nothing
+was published. From publication onwards the contract is stable and name changes are
+breaking. Translating the internal documents in `docs/` (product, architecture, survey)
+into English is still pending; they remain in Spanish today.
 
-## ADR-003 (enmienda) — el nivel 1 es SigLIP, y su puntuación es relativa
+## ADR-003 (amendment) — level 1 is SigLIP, and its score is relative
 
-**Contexto.** La redacción original proponía MobileCLIP-S0 int8 (~90 MB, ~50 ms) como
-gate barato. Medido sobre cuatro fotos reales de firmas manuscritas y 47 negativas,
-MobileCLIP-S0 **no reconoce ninguna** (0/4) con cuatro juegos de prompts distintos;
-su variante S1 acierta 3/4 pero ordena las firmas por debajo de los documentos, así
-que ningún umbral separa las clases.
+**Context.** The original wording proposed MobileCLIP-S0 int8 (~90 MB, ~50 ms) as the
+cheap gate. Measured on four real photos of handwritten signatures and 47 negatives,
+MobileCLIP-S0 **recognises none** (0/4) with four different prompt sets; its S1 variant
+gets 3/4 but ranks signatures below documents, so no threshold separates the classes.
 
-**Decisión.** El nivel 1 es **SigLIP base** (ONNX q8 fusionado, 201 MB verificado por
-SHA-256). Reconoce 4 de 4 firmas reales por el arnés y rechaza el 70 % de las
-negativas, a ~1,2 s por imagen. El gate devuelve una puntuación **relativa**
-(`P(firma) / max(P)`), no una probabilidad absoluta: las probabilidades de un
-zero-shot no están calibradas y una firma reconocida puntúa 0,13-0,33.
+**Decision.** Level 1 is **SigLIP base** (fused q8 ONNX, 201 MB verified by SHA-256). It
+recognises 4 of 4 real signatures through the harness and rejects 70 % of the negatives,
+at ~1.2 s per image. The gate returns a **relative** score (`P(signature) / max(P)`), not
+an absolute probability: zero-shot probabilities are uncalibrated and a recognised
+signature scores 0.13–0.33.
 
-**Consecuencias.** El «gate barato de 50 ms» no existe: subir/cámara pasan a ~1,2 s
-p50, aceptable para una firma pero no para un flujo de muchas imágenes. La banda
-ambigua (0,5-0,99) acepta hoy, y por eso el 29,8 % de las negativas pasa; el VLM es
-la segunda opinión que debe decidir ahí. Los umbrales siguen provisionales: con 4
-positivos reales no se puede afirmar la tasa de falsos rechazos, y con cero errores
-la cota de 3/N pide 150.
+**Consequences.** The "cheap 50 ms gate" does not exist: upload/camera move to ~1.2 s p50,
+acceptable for a signature but not for a flow with many images. The ambiguous band
+(0.5–0.99) accepts today, which is why 29.8 % of the negatives pass; the VLM is the second
+opinion that should decide there. Thresholds remain provisional: with 4 real positives the
+false-rejection rate cannot be asserted, and with zero errors the 3/N bound asks for 150.
+
+---
+
+Español: [`DECISIONS.es.md`](DECISIONS.es.md).
+
+*Identifiers quoted inside each ADR are the ones in use on the date of that decision.
+The public contract uses English names today: `sign`, `extractSignature`, `onSignature`,
+`--signature-*`.*

@@ -60,5 +60,5 @@ y documentado para que un tercero lo use sin leer el código.
   publicación para cuando cierre la fase 2 con `react` funcionando. Nada publicado.
 - ~~Idioma de la API pública frente a los mensajes de usuario~~: resuelto en la
   enmienda de ADR-004 — contrato en inglés, mensajes en inglés y español.
-- `docs/DECISIONS.md` sigue solo en español; el resto de la documentación pública
-  es bilingüe (`*.es.md` junto al archivo inglés).
+- ~~`docs/DECISIONS.md` solo en español~~: resuelto — los ADR son bilingües como el
+  resto (`DECISIONS.es.md` junto al archivo inglés).

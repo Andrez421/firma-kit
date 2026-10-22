@@ -61,7 +61,7 @@ without reading the code.
   for when phase 2 closes with `react` working. Nothing is published yet.
 - ~~Language of the public API versus user messages~~: settled by the ADR-004
   amendment — English contract, messages in English and Spanish.
-- `docs/DECISIONS.md` is still Spanish only; the rest of the public docs are
-  bilingual (`*.es.md` next to the English file).
+- ~~`docs/DECISIONS.md` Spanish only~~: settled — the ADRs are bilingual like the
+  rest (`DECISIONS.es.md` next to the English file).
 
 Español: [`PRODUCT.es.md`](PRODUCT.es.md).
