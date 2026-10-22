@@ -40,6 +40,30 @@ describe("parseManifest", () => {
     ).toThrow(/licencia verificada/);
   });
 
+  it("admite material sin licencia sólo bajo web-unverified y con licence unknown", () => {
+    const entrada = {
+      path: "web/a.jpg",
+      label: "not_signature",
+      source: "web-unverified",
+      licence: "unknown",
+    };
+    expect(parseManifest([entrada])[0]!.source).toBe("web-unverified");
+    // Si alguien dice tener licencia, entonces no es web-unverified: es una
+    // fuente real y debe declarar cuál.
+    expect(() =>
+      parseManifest([{ ...entrada, licence: "CC-BY-4.0" }])
+    ).toThrow(/exige licence/);
+  });
+
+  it("valida la marca de sensible y la conserva", () => {
+    expect(
+      parseManifest([{ ...valido, sensitive: true }])[0]!.sensitive
+    ).toBe(true);
+    expect(() =>
+      parseManifest([{ ...valido, sensitive: "sí" }])
+    ).toThrow(/sensitive/);
+  });
+
   it("acepta licencia desconocida si el archivo es sintético", () => {
     expect(() => parseManifest([{ ...valido, licence: "unknown" }])).not.toThrow();
   });

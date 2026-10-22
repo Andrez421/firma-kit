@@ -11,6 +11,14 @@ import type { Budgets, CorpusEntry } from "./manifest.js";
 export type EvalCase = CorpusEntry;
 
 export type EvalReport = {
+  /** Qué verificador produjo el informe: "baseline-ink", "two-tier", … */
+  verifier: string;
+  /**
+   * false cuando el lote incluye material sin licencia verificada: sus números
+   * sirven para probar el arnés, no para fijar umbrales.
+   */
+  evidence: boolean;
+  sensitive: number;
   total: number;
   truePositives: number;
   falseNegatives: number;
@@ -27,6 +35,8 @@ export type EvalReport = {
 };
 
 export type RunEvalOptions = {
+  /** Nombre del verificador evaluado; sin él el informe no es trazable. */
+  verifierName: string;
   cases: EvalCase[];
   verifier: Verifier;
   loadImage: (ruta: string) => Promise<Bitmap>;
@@ -43,7 +53,14 @@ function percentil(valores: number[], q: number): number {
 }
 
 export async function runEval(opciones: RunEvalOptions): Promise<EvalReport> {
-  const { cases, verifier, loadImage, budgets, now = () => Date.now() } = opciones;
+  const {
+    cases,
+    verifier,
+    loadImage,
+    budgets,
+    verifierName,
+    now = () => Date.now(),
+  } = opciones;
 
   if (cases.length === 0) {
     throw new Error("no hay casos: un informe vacío no dice nada");
@@ -96,7 +113,17 @@ export async function runEval(opciones: RunEvalOptions): Promise<EvalReport> {
     );
   }
 
+  const sinEvidencia = cases.filter((c) => c.source === "web-unverified").length;
+  if (sinEvidencia > 0) {
+    reasons.push(
+      `${sinEvidencia} imágenes sin licencia verificada (web-unverified): el informe no es evidencia`
+    );
+  }
+
   return {
+    verifier: verifierName,
+    evidence: sinEvidencia === 0,
+    sensitive: cases.filter((c) => c.sensitive).length,
     total: cases.length,
     truePositives,
     falseNegatives,
@@ -110,7 +137,9 @@ export async function runEval(opciones: RunEvalOptions): Promise<EvalReport> {
       max: Math.max(...latencias),
     },
     failures,
-    passed: reasons.length === 0,
+    // Una prueba de humo no pasa ni falla: informa. Si el lote no es evidencia,
+    // mezclar "falla" con "no concluyente" engaña.
+    passed: sinEvidencia === 0 && reasons.length === 0,
     reasons,
   };
 }
@@ -119,11 +148,16 @@ export async function runEval(opciones: RunEvalOptions): Promise<EvalReport> {
 export function formatReport(report: EvalReport): string {
   const pct = (v: number) => `${(v * 100).toFixed(1)} %`;
   return [
+    `verificador: ${report.verifier}`,
+    `evidencia: ${report.evidence ? "sí" : "no (incluye imágenes sin licencia verificada)"}`,
+    report.sensitive ? `marcadas como sensibles: ${report.sensitive}` : "",
     `casos: ${report.total}`,
     `matriz: VP ${report.truePositives} · FN ${report.falseNegatives} · VN ${report.trueNegatives} · FP ${report.falsePositives}`,
     `falsos rechazos: ${pct(report.falseRejectionRate)}`,
     `falsos aceptados: ${pct(report.falseAcceptRate)}`,
     `latencia: p50 ${report.latencyMs.p50} ms · p95 ${report.latencyMs.p95} ms · max ${report.latencyMs.max} ms`,
-    report.passed ? "RESULTADO: pasa" : `RESULTADO: falla — ${report.reasons.join("; ")}`,
-  ].join("\n");
+    report.passed ? "RESULTADO: pasa" : `RESULTADO: ${report.evidence ? "falla" : "no concluyente"} — ${report.reasons.join("; ")}`,
+  ]
+    .filter(Boolean)
+    .join("\n");
 }

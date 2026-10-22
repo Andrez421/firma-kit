@@ -8,15 +8,30 @@
 
 export type CorpusLabel = "signature" | "not_signature";
 
+export type CorpusSource =
+  | "synthetic"
+  | "own"
+  | "web-unverified"
+  | (string & {});
+
 export type CorpusEntry = {
   /** Ruta relativa al directorio del corpus. */
   path: string;
   label: CorpusLabel;
-  /** De dónde salió: "synthetic", URL del dataset, etc. */
-  source: string;
+  /** De dónde salió: "synthetic", "own", "web-unverified" o una URL de dataset. */
+  source: CorpusSource;
   /** Licencia del archivo, obligatoria si no es sintético. */
   licence: string;
+  /**
+   * El archivo contiene datos personales o sensibles (documento de identidad,
+   * historia clínica, transacción de un tercero). Nunca debe salir del volumen
+   * local ni aparecer en un informe publicable.
+   */
+  sensitive?: boolean;
 };
+
+/** Fuentes cuyas imágenes no se pueden redistribuir ni citar como evidencia. */
+const SIN_EVIDENCIA = new Set(["web-unverified"]);
 
 export class ManifestError extends Error {}
 
@@ -72,13 +87,33 @@ export function parseManifest(valor: unknown): CorpusEntry[] {
     if (typeof licencia !== "string" || licencia.trim() === "") {
       throw new ManifestError(`${donde}: falta "licence"`);
     }
-    if (fuente !== "synthetic" && licencia === "unknown") {
+    // `web-unverified` es la etiqueta explícita para "no sé de dónde salió":
+    // se admite para pruebas de humo, pero sólo con licencia "unknown", y el
+    // informe sale marcado como no-evidencia.
+    if (SIN_EVIDENCIA.has(fuente)) {
+      if (licencia !== "unknown") {
+        throw new ManifestError(
+          `${donde}: "${fuente}" exige licence "unknown"; si verificaste la licencia, usa su fuente real`
+        );
+      }
+    } else if (fuente !== "synthetic" && licencia === "unknown") {
       throw new ManifestError(
         `${donde}: una fuente real necesita licencia verificada, no "unknown"`
       );
     }
 
-    return { path: ruta, label: etiqueta as CorpusLabel, source: fuente, licence: licencia };
+    const sensitivo = e["sensitive"];
+    if (sensitivo !== undefined && typeof sensitivo !== "boolean") {
+      throw new ManifestError(`${donde}: "sensitive" debe ser booleano`);
+    }
+
+    return {
+      path: ruta,
+      label: etiqueta as CorpusLabel,
+      source: fuente,
+      licence: licencia,
+      ...(sensitivo === undefined ? {} : { sensitive: sensitivo }),
+    };
   });
 }
 

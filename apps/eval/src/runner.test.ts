@@ -33,6 +33,7 @@ describe("runEval", () => {
       verifier: verificadorEnSerie([true, false]),
       loadImage: async () => imagen,
       budgets: BUDGETS,
+      verifierName: "test",
     });
     expect(report).toMatchObject({
       total: 2,
@@ -59,6 +60,7 @@ describe("runEval", () => {
       verifier: verificadorEnSerie(veredictos),
       loadImage: async () => imagen,
       budgets: BUDGETS,
+      verifierName: "test",
     });
     expect(report.falseRejectionRate).toBeCloseTo(0.2);
     expect(report.passed).toBe(false);
@@ -78,10 +80,41 @@ describe("runEval", () => {
       verifier: verificadorEnSerie(veredictos),
       loadImage: async () => imagen,
       budgets: BUDGETS,
+      verifierName: "test",
     });
     expect(report.falseAcceptRate).toBeCloseTo(0.5);
     expect(report.passed).toBe(false);
     expect(report.reasons.join(" ")).toMatch(/falsos aceptados/);
+  });
+
+  it("un lote con material sin licencia no es evidencia, aunque el verificador acierte", async () => {
+    const report = await runEval({
+      cases: [
+        caso("a.png", "signature"),
+        { ...caso("b.jpg", "not_signature"), source: "web-unverified", licence: "unknown" },
+      ],
+      verifier: verificadorEnSerie([true, false]),
+      loadImage: async () => imagen,
+      budgets: BUDGETS,
+      verifierName: "test",
+    });
+    expect(report.evidence).toBe(false);
+    expect(report.passed).toBe(false);
+    expect(report.reasons.join(" ")).toMatch(/sin licencia verificada/);
+  });
+
+  it("cuenta las imágenes marcadas como sensibles", async () => {
+    const report = await runEval({
+      cases: [
+        { ...caso("a.png", "signature"), sensitive: true },
+        caso("b.png", "not_signature"),
+      ],
+      verifier: verificadorEnSerie([true, false]),
+      loadImage: async () => imagen,
+      budgets: BUDGETS,
+      verifierName: "test",
+    });
+    expect(report.sensitive).toBe(1);
   });
 
   it("se niega a medir con una sola clase: no hay matriz que leer", async () => {
@@ -91,6 +124,7 @@ describe("runEval", () => {
         verifier: verificadorEnSerie([true]),
         loadImage: async () => imagen,
         budgets: BUDGETS,
+      verifierName: "test",
       })
     ).rejects.toThrow(/negativos/);
   });
@@ -102,6 +136,7 @@ describe("runEval", () => {
         verifier: verificadorEnSerie([]),
         loadImage: async () => imagen,
         budgets: BUDGETS,
+      verifierName: "test",
       })
     ).rejects.toThrow(/vacío|no hay casos/);
   });
@@ -118,6 +153,7 @@ describe("runEval", () => {
       },
       loadImage: async () => imagen,
       budgets: BUDGETS,
+      verifierName: "test",
       now: () => t,
     });
     expect(report.latencyMs.p50).toBe(10);
@@ -126,6 +162,9 @@ describe("runEval", () => {
 
   it("el informe legible dice si pasa y por qué no", () => {
     const texto = formatReport({
+      verifier: "baseline-ink",
+      evidence: true,
+      sensitive: 0,
       total: 10,
       truePositives: 8,
       falseNegatives: 2,
