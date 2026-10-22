@@ -179,6 +179,35 @@ describe("<SignatureField />", () => {
     expect(onSignature).toHaveBeenCalledWith(null);
   });
 
+  it("guides the person until there is a stroke, then gets out of the way", () => {
+    const { container } = render(<SignatureField />);
+    expect(container.querySelector(".signature__hint")).not.toBeNull();
+
+    const lienzo = container.querySelector("canvas")!;
+    vi.spyOn(lienzo, "getBoundingClientRect").mockReturnValue({
+      left: 0, top: 0, width: 600, height: 200, right: 600, bottom: 200, x: 0, y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    Object.assign(lienzo, { setPointerCapture: () => {}, releasePointerCapture: () => {} });
+    fireEvent.pointerDown(lienzo, { clientX: 30, clientY: 100, pointerId: 1 });
+    fireEvent.pointerUp(lienzo, { pointerId: 1 });
+
+    // La guía es aria-hidden y desaparece al primer trazo.
+    expect(container.querySelector(".signature__hint")).toBeNull();
+  });
+
+  it("shows the image the person picked before confirming it", async () => {
+    const { container } = render(<SignatureField modes={["upload"]} encoder={encoder()} />);
+    const archivo = new File([new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a])], "firma.png", {
+      type: "image/png",
+    });
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [archivo] } });
+    });
+    expect(screen.getByAltText("The image you selected").getAttribute("src")).toBe("blob:firma");
+  });
+
   it("undoes the last stroke without losing the previous one", () => {
     const { container } = render(<SignatureField />);
     const lienzo = container.querySelector("canvas")!;

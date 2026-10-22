@@ -115,6 +115,22 @@
   gap: var(--signature-gap);
 }
 
+.signature__canvas-wrap {
+  position: relative;
+}
+
+/* La guía se centra sobre el lienzo y se va en cuanto hay un trazo. */
+.signature__hint {
+  color: var(--signature-muted);
+  inset-inline: 0;
+  margin: 0;
+  pointer-events: none;
+  position: absolute;
+  text-align: center;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .signature__canvas {
   background: var(--signature-surface);
   border: 1px dashed var(--signature-border);

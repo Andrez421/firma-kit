@@ -1,6 +1,6 @@
 // Modo "dibujar": la parte que puede ser pura. El puntero, el canvas y el
 // evento táctil son del adaptador; aquí se convierte una lista de muestras en
-// un PNG de tinta sobre blanco, sin DOM y sin estado global.
+// un PNG de ink sobre blanco, sin DOM y sin estado global.
 //
 // Presión simulada: un puntero táctil no informa presión de forma fiable, así
 // que se deriva de la velocidad — rápido = trazo fino, lento = trazo grueso.
@@ -12,16 +12,16 @@ import type { Bitmap } from "../types.js";
 export type StrokePoint = { x: number; y: number; t: number };
 
 export type StrokeOptions = {
-  /** Grosor mínimo en píxeles (stroke rápido). */
-  grosorMinimo?: number;
-  /** Grosor máximo en píxeles (stroke lento). */
-  grosorMaximo?: number;
-  /** 0 = sin suavizar, 1 = suavizado completo. */
-  suavizado?: number;
+  /** Grosor mínimo en píxeles: el trazo rápido. */
+  minWidth?: number;
+  /** Grosor máximo en píxeles: el trazo lento. */
+  maxWidth?: number;
+  /** 0 = sin suavizar, 1 = smoothing completo. */
+  smoothing?: number;
   /** Velocidad (px/ms) a la que la presión simulada llega a su mínimo. */
-  velocidadMaxima?: number;
-  /** Nivel de gris de la tinta. 0 = negro puro. */
-  tinta?: number;
+  maxSpeed?: number;
+  /** Nivel de gris de la ink. 0 = negro puro. */
+  ink?: number;
 };
 
 const MIN_STROKE_WIDTH = 1.2;
@@ -34,14 +34,14 @@ function clamp01(v: number): number {
 
 /**
  * Suaviza la polilínea con un filtro binomial de 5 muestras, mezclado según
- * `suavizado`. Los extremos se conservan: si se movieran, el stroke empezaría y
+ * `smoothing`. Los extremos se conservan: si se movieran, el stroke empezaría y
  * terminaría en otro sitio del que dibujó la persona.
  */
 export function smoothStroke(
   points: StrokePoint[],
   options: StrokeOptions = {}
 ): StrokePoint[] {
-  const factor = clamp01(options.suavizado ?? 1);
+  const factor = clamp01(options.smoothing ?? 1);
   if (points.length < 3 || factor === 0) return points;
   const pesos = [1, 2, 3, 2, 1];
   const found = points.map((p) => ({ ...p }));
@@ -73,9 +73,9 @@ export function strokeWidths(
   points: StrokePoint[],
   options: StrokeOptions = {}
 ): number[] {
-  const min = options.grosorMinimo ?? MIN_STROKE_WIDTH;
-  const max = options.grosorMaximo ?? MAX_STROKE_WIDTH;
-  const velocidadMaxima = options.velocidadMaxima ?? MAX_SPEED;
+  const min = options.minWidth ?? MIN_STROKE_WIDTH;
+  const max = options.maxWidth ?? MAX_STROKE_WIDTH;
+  const maxSpeed = options.maxSpeed ?? MAX_SPEED;
   const widths = new Array<number>(points.length);
   for (let i = 0; i < points.length; i++) {
     const previous = points[Math.max(0, i - 1)]!;
@@ -86,7 +86,7 @@ export function strokeWidths(
       next.y - previous.y
     );
     const velocidad = dt > 0 ? distancia / dt : 0;
-    const presion = clamp01(1 - velocidad / velocidadMaxima);
+    const presion = clamp01(1 - velocidad / maxSpeed);
     widths[i] = min + (max - min) * presion;
   }
   return widths;
@@ -126,11 +126,11 @@ export function rasterizeStroke(
     );
   }
 
-  const tinta = options.tinta ?? 0;
+  const ink = options.ink ?? 0;
   for (let i = 0; i < coverage.length; i++) {
     const c = coverage[i]!;
     if (c <= 0) continue;
-    const v = Math.round(255 + (tinta - 255) * Math.min(1, c));
+    const v = Math.round(255 + (ink - 255) * Math.min(1, c));
     const o = i * 4;
     data[o] = v;
     data[o + 1] = v;
