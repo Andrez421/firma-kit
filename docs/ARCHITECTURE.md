@@ -13,7 +13,7 @@
   ├── modes/           draw.ts (stroke model) and type.ts (layout)
   └── ink/             pure pipeline: extractSignature, flattenInk, stretchLevels
 @firma-kit/react       components + styles (CSS variables, Tailwind not required)
-@firma-kit/verify      visual verification on CPU (MobileCLIP-S0 → SmolVLM-256M)
+@firma-kit/verify      visual verification on CPU (SigLIP base → SmolVLM-256M)
 apps/playground        Vite bench for the four modes (private, not published)
 apps/demo              Next.js exercising the four modes (phase 4)
 ```
@@ -61,12 +61,13 @@ Two tiers, **both on CPU**, the image never leaves the caller's infrastructure:
 
 | Tier | Model | Size | Latency | Role |
 | --- | --- | --- | --- | --- |
-| 1 | MobileCLIP-S0 int8 (zero-shot image↔text) | budget ~90 MB | ~50 ms | gate: is the winning class "handwritten signature"? |
+| 1 | SigLIP base q8 (zero-shot image↔text) | budget 201 MB | ~1.2 s | gate: is the winning class "handwritten signature"? |
 | 2 | SmolVLM-256M GGUF Q8_0 | ~270 MB | ~1–2 s | second opinion only when tier 1 is ambiguous |
 
-The published int8 ONNX weights measure ≈55 MB (`vision_model_int8` 11.8 MB +
-`text_model_int8` 42.8 MB); the tier-1 budget is reconciled when phase 3 sizes the
-container.
+Tier 1 uses SigLIP base's fused q8 ONNX (201 MB, pinned by SHA-256): it is the only
+one of the three models measured that recognised real signature photos. The earlier
+"≈55 MB, ~50 ms" estimate belonged to MobileCLIP-S0, which recognised none of them;
+see `docs/eval/gate-smoke.md`.
 
 Open classes for tier 1 (draft): "a handwritten signature on paper", "an ID card
 or identity document", "an invoice or printed page", "a photo of an object", "a

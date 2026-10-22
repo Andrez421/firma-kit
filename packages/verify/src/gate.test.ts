@@ -4,10 +4,10 @@ import path from "node:path";
 import type { Bitmap } from "@firma-kit/core";
 import { describe, expect, it } from "vitest";
 
-import { createClipGate, LOCAL_MODEL_ID, SIGNATURE_PROMPTS } from "./gate.js";
+import { createZeroShotGate, LOCAL_MODEL_ID, SIGNATURE_PROMPTS } from "./gate.js";
 
 const modelos = process.env["FIRMA_KIT_MODULES_DIR"] ?? path.join(process.cwd(), "modules");
-const hayModelo = existsSync(path.join(modelos, LOCAL_MODEL_ID, "config.json"));
+const hayModelo = existsSync(path.join(modelos, LOCAL_MODEL_ID, "onnx", "model_quantized.onnx"));
 
 /** Lienzo blanco con una banda oscura: sirve para comprobar que el gate corre. */
 function imagen(w = 320, h = 240): Bitmap {
@@ -23,7 +23,7 @@ function imagen(w = 320, h = 240): Bitmap {
   return { data, width: w, height: h };
 }
 
-describe("createClipGate", () => {
+describe("createZeroShotGate", () => {
   it("pregunta por la firma primero y por cinco clases más después", () => {
     expect(SIGNATURE_PROMPTS[0]).toMatch(/signature/);
     expect(SIGNATURE_PROMPTS).toHaveLength(6);
@@ -34,7 +34,7 @@ describe("createClipGate", () => {
   it.skipIf(!hayModelo)(
     "devuelve una probabilidad entre 0 y 1 con el modelo local",
     async () => {
-      const gate = await createClipGate({ modelsDir: modelos });
+      const gate = await createZeroShotGate({ modelsDir: modelos });
       const puntaje = await gate.score(imagen());
       expect(puntaje).toBeGreaterThanOrEqual(0);
       expect(puntaje).toBeLessThanOrEqual(1);

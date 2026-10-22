@@ -21,55 +21,50 @@ export type ModelSpec = {
 
 export const MODELS: ModelSpec[] = [
   {
-    id: "mobileclip-s0-int8",
+    id: "siglip-base-patch16-224",
     tier: 1,
-    // El repositorio del modelo declara la licencia de Apple (apple-amlr), no
-    // una Creative Commons: no es redistribuible, solo descargable.
-    licence: "Apple Machine Learning Research Model License (apple-amlr)",
+    // SigLIP está entrenado y publicado por Google bajo Apache-2.0; los ONNX
+    // vienen del port de Xenova, que conserva la licencia del modelo original.
+    licence: "Apache-2.0",
     files: [
+      // Los cuatro ficheros que transformers.js necesita para preprocesar imagen
+      // y texto.
       {
-        name: "mobileclip-s0/onnx/vision_model_int8.onnx",
-        url: "https://huggingface.co/Xenova/mobileclip_s0/resolve/main/onnx/vision_model_int8.onnx",
-        bytes: 11_846_808,
+        name: "siglip-base-patch16-224/config.json",
+        url: "https://huggingface.co/Xenova/siglip-base-patch16-224/resolve/main/config.json",
+        bytes: 457,
         sha256:
-          "7a1b45f57fb9f3cde9d325759883e9451d7281336caeb9c576ae918e72080f0b",
+          "e6de71291f181b0b81adc93098787bb4597a79dc18f59737feda8f41671fb6a2",
       },
       {
-        // transformers.js necesita estos cuatro para preprocesar imagen y texto;
-        // sin ellos no puede instanciar el modelo aunque los pesos estén.
-        name: "mobileclip-s0/config.json",
-        url: "https://huggingface.co/Xenova/mobileclip_s0/resolve/main/config.json",
-        bytes: 344,
+        name: "siglip-base-patch16-224/preprocessor_config.json",
+        url: "https://huggingface.co/Xenova/siglip-base-patch16-224/resolve/main/preprocessor_config.json",
+        bytes: 368,
         sha256:
-          "8e33c1f2634a33de3e38715f9809ef86742aacbe31c310c66fc2636755458d56",
+          "21ee046a8a52a65e5f9c177bf840bfb39ea66c9c54cf2760630efd58e0a3ec80",
       },
       {
-        name: "mobileclip-s0/preprocessor_config.json",
-        url: "https://huggingface.co/Xenova/mobileclip_s0/resolve/main/preprocessor_config.json",
-        bytes: 382,
+        name: "siglip-base-patch16-224/tokenizer.json",
+        url: "https://huggingface.co/Xenova/siglip-base-patch16-224/resolve/main/tokenizer.json",
+        bytes: 2_398_744,
         sha256:
-          "b031f09fbd69e22a605b6cc7433993249ee893b7fc1b79321f669cd015493dd4",
+          "4a17c975210be5ab4c36b47d8dae4eefb866dbfb1e676e394aad85dc30a3ae08",
       },
       {
-        name: "mobileclip-s0/tokenizer.json",
-        url: "https://huggingface.co/Xenova/mobileclip_s0/resolve/main/tokenizer.json",
-        bytes: 2_224_081,
+        name: "siglip-base-patch16-224/tokenizer_config.json",
+        url: "https://huggingface.co/Xenova/siglip-base-patch16-224/resolve/main/tokenizer_config.json",
+        bytes: 739,
         sha256:
-          "72ed5c96db5729294468543e4bc75fce14ca63f58e37300290189ba1c1e52b85",
+          "9a38d3c6b5e26fe5dcc607eda95e38d78d30d9291835bb9e8116e8174c1d4ba2",
       },
       {
-        name: "mobileclip-s0/tokenizer_config.json",
-        url: "https://huggingface.co/Xenova/mobileclip_s0/resolve/main/tokenizer_config.json",
-        bytes: 763,
+        // Modelo fusionado (visión + texto en un solo grafo), que es como lo carga
+        // el pipeline de zero-shot. Cuantizado q8: 201 MB.
+        name: "siglip-base-patch16-224/onnx/model_quantized.onnx",
+        url: "https://huggingface.co/Xenova/siglip-base-patch16-224/resolve/main/onnx/model_quantized.onnx",
+        bytes: 210_977_441,
         sha256:
-          "a7d9d24f248071b792e4a3b56ab0539c2f40eec8da56d6fd91fb3a50058acebd",
-      },
-      {
-        name: "mobileclip-s0/onnx/text_model_int8.onnx",
-        url: "https://huggingface.co/Xenova/mobileclip_s0/resolve/main/onnx/text_model_int8.onnx",
-        bytes: 42_799_230,
-        sha256:
-          "fc8d87978623385c17a46331ffb9cb5ab7fe8b61c513c094602b85f08edd0a0b",
+          "9171eb00c38b9ec82f924877356d008b79e3285dbac7cd10965827bee30c9a99",
       },
     ],
   },

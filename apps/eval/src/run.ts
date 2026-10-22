@@ -12,7 +12,7 @@ import path from "node:path";
 
 import { createCanvas, loadImage as cargarImagen, type Image } from "@napi-rs/canvas";
 import type { Bitmap, Verifier } from "@firma-kit/core";
-import { createClipGate, createTwoTierVerifier, modelsDir } from "@firma-kit/verify";
+import { createTwoTierVerifier, createZeroShotGate, modelsDir } from "@firma-kit/verify";
 
 import { createInkPipelineVerifier } from "./baseline.js";
 
@@ -42,8 +42,8 @@ async function leerBitmap(ruta: string): Promise<Bitmap> {
  * 55 MB dentro de una petición.
  */
 async function verificadorDesdeModelos(): Promise<{ verifier: Verifier; name: string }> {
-  const gate = await createClipGate({ modelsDir: modelsDir() });
-  return { verifier: createTwoTierVerifier({ gate }), name: "clip-gate-s0" };
+  const gate = await createZeroShotGate({ modelsDir: modelsDir() });
+  return { verifier: createTwoTierVerifier({ gate }), name: "siglip-zero-shot" };
 }
 
 // `--baseline` mide el pipeline de tinta, que no necesita modelos. Sin el flag

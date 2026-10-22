@@ -1,17 +1,15 @@
-// Gate de nivel 1: zero-shot imagen↔texto con MobileCLIP-S0 int8.
+// Gate de nivel 1: zero-shot imagen↔texto con SigLIP base (q8).
 //
-// Se pregunta directamente lo que importa —«¿esto es una firma?»— comparando la
-// imagen con un puñado de descripciones y quedándose con la probabilidad de la
-// primera. Sin entrenar nada y sin sacar la imagen del proceso.
+// Se pregunta lo que importa —«¿esto es una firma?»— comparando la imagen con un
+// puñado de descripciones y quedándose con la probabilidad de la primera. Sin
+// entrenar nada y sin sacar la imagen del proceso.
+//
+// Por qué SigLIP y no MobileCLIP: medido sobre cuatro fotos reales de firmas y
+// 47 negativas, MobileCLIP-S0 reconocía 0 de 4 y su versión S1 ordenaba las
+// firmas por debajo de los documentos. SigLIP reconoce 3 de 4 y rechaza 38 de 47.
+// Ver docs/eval/gate-smoke.md y la enmienda de ADR-003.
 
-import {
-  AutoProcessor,
-  AutoTokenizer,
-  CLIPTextModelWithProjection,
-  CLIPVisionModelWithProjection,
-  RawImage,
-  env,
-} from "@huggingface/transformers";
+import { env, pipeline, RawImage } from "@huggingface/transformers";
 import type { Bitmap } from "@firma-kit/core";
 
 import type { Gate } from "./verifier.js";
@@ -19,9 +17,8 @@ import type { Gate } from "./verifier.js";
 /**
  * Clases abiertas del gate. La primera es la que decide.
  *
- * Redactadas como descripciones de foto («a photo of…») y no como etiquetas
- * sueltas: el modelo está entrenado con pies de foto, y la forma del texto mueve
- * el resultado más de lo que parece.
+ * Redactadas como descripciones de foto («a handwritten signature on paper») y
+ * no como etiquetas sueltas: el modelo está entrenado con pies de foto.
  */
 export const SIGNATURE_PROMPTS = [
   "a handwritten signature on paper",
@@ -33,9 +30,9 @@ export const SIGNATURE_PROMPTS = [
 ] as const;
 
 /** Carpeta del modelo dentro del volumen de modelos. */
-export const LOCAL_MODEL_ID = "mobileclip-s0";
+export const LOCAL_MODEL_ID = "siglip-base-patch16-224";
 
-export type ClipGateOptions = {
+export type ZeroShotGateOptions = {
   /** Directorio donde `firma-kit-verify models pull` dejó el modelo. */
   modelsDir: string;
   prompts?: readonly string[];
@@ -57,55 +54,35 @@ function aRawImage(imagen: Bitmap): RawImage {
  * Carga el modelo desde el volumen local y devuelve el gate.
  *
  * `allowRemoteModels = false` es deliberado: si el modelo no está descargado, se
- * falla con un error claro en vez de bajar 55 MB dentro de la petición de una
+ * falla con un error claro en vez de bajar 200 MB dentro de la petición de una
  * persona.
  */
-export async function createClipGate(options: ClipGateOptions): Promise<Gate> {
+export async function createZeroShotGate(options: ZeroShotGateOptions): Promise<Gate> {
   const { modelsDir, prompts = SIGNATURE_PROMPTS } = options;
 
   env.allowRemoteModels = false;
   env.allowLocalModels = true;
   env.localModelPath = modelsDir;
 
-  const [vision, text, processor, tokenizer] = await Promise.all([
-    CLIPVisionModelWithProjection.from_pretrained(LOCAL_MODEL_ID, { dtype: "int8" }),
-    CLIPTextModelWithProjection.from_pretrained(LOCAL_MODEL_ID, { dtype: "int8" }),
-    AutoProcessor.from_pretrained(LOCAL_MODEL_ID),
-    AutoTokenizer.from_pretrained(LOCAL_MODEL_ID),
-  ]);
+  const clasificador = await pipeline("zero-shot-image-classification", LOCAL_MODEL_ID, {
+    dtype: "q8",
+  });
 
-  // El export int8 del modelo exige longitud fija de 77: sin el padding explícito
-  // ONNX falla intentando difundir 10 posiciones contra 77.
-  const texto = await text(
-    tokenizer([...prompts], { padding: "max_length", max_length: 77, truncation: true })
-  );
-  const dimension = texto.text_embeds.dims[1]!;
-  const textoData = Array.from(texto.text_embeds.data as Float32Array);
-  const normas = prompts.map((_, i) =>
-    Math.hypot(...textoData.slice(i * dimension, (i + 1) * dimension))
-  );
-
-  const similitud = (imagen: Float32Array, i: number): number => {
-    const normaImagen = Math.hypot(...imagen);
-    let punto = 0;
-    for (let k = 0; k < dimension; k++) {
-      punto += imagen[k]! * textoData[i * dimension + k]!;
-    }
-    return punto / (normaImagen * normas[i]!);
-  };
+  const firma = prompts[0]!;
 
   return {
     async score(imagen: Bitmap): Promise<number> {
-      const { pixel_values } = await processor(aRawImage(imagen));
-      const { image_embeds } = await vision({ pixel_values });
-      const datos = image_embeds.data as Float32Array;
-
-      const sims = prompts.map((_, i) => similitud(datos, i));
-      // El factor 100 es el `logit_scale` de CLIP: sin él, el softmax de cosenos
-      // queda casi plano y ninguna clase gana.
-      const exp = sims.map((s) => Math.exp(s * 100));
-      const suma = exp.reduce((a, b) => a + b, 0);
-      return exp[0]! / suma;
+      const salida = (await clasificador(aRawImage(imagen), [...prompts])) as Array<{
+        label: string;
+        score: number;
+      }>;
+      const maxima = Math.max(...salida.map((clase) => clase.score));
+      const propia = salida.find((clase) => clase.label === firma)?.score ?? 0;
+      // Puntuación RELATIVA, no probabilidad absoluta: las probabilidades de un
+      // zero-shot no están calibradas (una firma real saca 0.13-0.33 aunque gane),
+      // así que lo que tiene señal es el orden. 1 significa «la firma es la clase
+      // ganadora»; 0.5, «va segunda por la mitad».
+      return maxima > 0 ? propia / maxima : 0;
     },
   };
 }

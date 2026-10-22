@@ -10,7 +10,7 @@
   ├── types.ts         contrato: SignatureMode, Signature, SignatureResult, RejectionReason
   └── ink/             pipeline puro: extractSignature, flattenInk, stretchLevels
 @firma-kit/react       componentes + estilos (CSS variables, no Tailwind obligatorio)
-@firma-kit/verify      verificación visual en CPU (MobileCLIP-S0 → SmolVLM-256M)
+@firma-kit/verify      verificación visual en CPU (SigLIP base → SmolVLM-256M)
 apps/demo              Next.js que ejercita los cuatro modos
 ```
 
@@ -43,10 +43,10 @@ Dos niveles, **ambos en CPU**, la imagen nunca sale de la infraestructura:
 
 | Nivel | Modelo | Tamaño | Latencia | Papel |
 | --- | --- | --- | --- | --- |
-| 1 | MobileCLIP-S0 int8 (zero-shot imagen↔texto) | presupuesto ~90 MB | ~50 ms | gate: ¿la clase ganadora es "firma manuscrita"? |
+| 1 | SigLIP base q8 (zero-shot imagen↔texto) | 201 MB | ~1.2 s | gate: ¿la clase ganadora es "firma manuscrita"? |
 | 2 | SmolVLM-256M GGUF Q8_0 | ~270 MB | ~1–2 s | segunda opinión solo si el nivel 1 es ambiguo |
 
-Los ONNX int8 publicados miden ≈55 MB (visión 11,8 MB + texto 42,8 MB); el presupuesto del nivel 1 se ajusta al dimensionar el contenedor en la fase 3.
+El nivel 1 usa el ONNX q8 fusionado de SigLIP base (201 MB, fijado por SHA-256): es el único de los tres modelos medidos que reconoció fotos reales de firmas. El «≈55 MB, ~50 ms» anterior correspondía a MobileCLIP-S0, que no reconoció ninguna; ver `docs/eval/gate-smoke.md`.
 
 Clases abiertas del nivel 1 (borrador): «una firma manuscrita sobre papel»,
 «una cédula o documento de identidad», «una factura o página impresa», «una foto
