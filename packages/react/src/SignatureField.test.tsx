@@ -1,6 +1,6 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createRef } from "react";
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import {
   SignatureField,
@@ -11,6 +11,17 @@ import { MESSAGES_ES } from "@firma-kit/core";
 import type { Bitmap, TextRasterizer } from "@firma-kit/core";
 
 afterEach(cleanup);
+
+// jsdom no implementa object URLs y el sustituto de vitest no acepta un Blob
+// real (`_buffer`), así que se puentea aquí: lo que importa es que el
+// componente lo cree y lo revoque, no cómo lo serializa el entorno de test.
+beforeEach(() => {
+  vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:firma");
+  vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+});
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 const encoder = () => vi.fn(async () => new Uint8Array([7, 7, 7]));
 
@@ -166,6 +177,54 @@ describe("<SignatureField />", () => {
     render(<SignatureField value={null} onSignature={onSignature} />);
     fireEvent.click(screen.getByRole("button", { name: "Clear" }));
     expect(onSignature).toHaveBeenCalledWith(null);
+  });
+
+  it("undoes the last stroke without losing the previous one", () => {
+    const { container } = render(<SignatureField />);
+    const lienzo = container.querySelector("canvas")!;
+    // jsdom devuelve un rect de 0×0 y no implementa la captura de puntero: sin
+    // estas dos líneas no hay coordenadas y el test no probaría nada.
+    vi.spyOn(lienzo, "getBoundingClientRect").mockReturnValue({
+      left: 0, top: 0, width: 600, height: 200, right: 600, bottom: 200, x: 0, y: 0,
+      toJSON: () => ({}),
+    } as DOMRect);
+    Object.assign(lienzo, { setPointerCapture: () => {}, releasePointerCapture: () => {} });
+
+    const deshacer = screen.getByRole("button", { name: "Undo" }) as HTMLButtonElement;
+    expect(deshacer.disabled).toBe(true);
+
+    const trazo = (x: number) => {
+      fireEvent.pointerDown(lienzo, { clientX: x, clientY: 100, pointerId: 1 });
+      fireEvent.pointerMove(lienzo, { clientX: x + 10, clientY: 110, pointerId: 1 });
+      fireEvent.pointerUp(lienzo, { pointerId: 1 });
+    };
+    trazo(20);
+    expect(deshacer.disabled).toBe(false);
+    trazo(120);
+
+    fireEvent.click(deshacer);
+    // Queda un trazo: el botón sigue disponible.
+    expect(deshacer.disabled).toBe(false);
+    fireEvent.click(deshacer);
+    expect(deshacer.disabled).toBe(true);
+  });
+
+  it("shows the generated signature with its size", async () => {
+    // Antes solo aparecía el texto "lista": la persona confirmaba a ciegas.
+    render(
+      <SignatureField
+        name="Ana Muñoz"
+        encoder={encoder()}
+        measurer={measurer}
+        rasterizer={inkRasterizer}
+      />
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Type" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use this signature" }));
+
+    const imagen = await screen.findByRole("img", { name: /signature generated/i });
+    expect(imagen.getAttribute("src")).toBe("blob:firma");
+    expect(URL.createObjectURL).toHaveBeenCalledTimes(1);
   });
 
   it("rejects a file whose bytes are not PNG or JPEG, before decoding it", async () => {
