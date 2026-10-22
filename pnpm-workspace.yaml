@@ -2,8 +2,13 @@ packages:
   - "packages/*"
   - "apps/*"
 
-# esbuild es el empaquetador de Vite y necesita su binario nativo. Es la única
-# dependencia con script de instalación en el repositorio y sólo la usa el
-# playground (dev, no se publica). pnpm 11 pide aprobarla explícitamente.
+# Dependencias con script de instalación, aprobadas explícitamente (pnpm 11 las
+# bloquea por defecto: es una frontera de seguridad, no un detalle).
 allowBuilds:
+  # Empaquetador de Vite; sólo lo usa el playground (dev, no se publica).
   esbuild: true
+  # Runtime ONNX: baja su binario nativo en el postinstall. Sin esto el gate de
+  # verificación visual no puede ejecutar inferencia.
+  onnxruntime-node: true
+  # Códec que usa el runtime ONNX para cargar los modelos.
+  protobufjs: true

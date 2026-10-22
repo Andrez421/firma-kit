@@ -12,7 +12,7 @@ import path from "node:path";
 
 import { createCanvas, loadImage as cargarImagen, type Image } from "@napi-rs/canvas";
 import type { Bitmap, Verifier } from "@firma-kit/core";
-import { createTwoTierVerifier } from "@firma-kit/verify";
+import { createClipGate, createTwoTierVerifier, modelsDir } from "@firma-kit/verify";
 
 import { createInkPipelineVerifier } from "./baseline.js";
 
@@ -37,26 +37,28 @@ async function leerBitmap(ruta: string): Promise<Bitmap> {
 }
 
 /**
- * Verificador real. Hoy queda deliberadamente sin modelos cargados: el arnés
- * funciona y mide, pero el gate se inyecta cuando existan los pesos.
+ * Verificador con el gate real. Carga MobileCLIP desde el volumen de modelos
+ * (`FIRMA_KIT_MODULES_DIR`); si no están, el error lo dice en vez de descargar
+ * 55 MB dentro de una petición.
  */
-function verificadorDesdeModelos(): Verifier {
-  return createTwoTierVerifier({
-    gate: {
-      score: async () => {
-        throw new Error(
-          "El gate todavía no carga modelos. Trae los pesos con `firma-kit-verify models pull` y conecta el runner en fase 3."
-        );
-      },
-    },
-  });
+async function verificadorDesdeModelos(): Promise<{ verifier: Verifier; name: string }> {
+  const gate = await createClipGate({ modelsDir: modelsDir() });
+  return { verifier: createTwoTierVerifier({ gate }), name: "clip-gate-s0" };
 }
 
 // `--baseline` mide el pipeline de tinta, que no necesita modelos. Sin el flag
 // se intenta el gate de dos niveles, que hoy lanza porque faltan los pesos.
 const usarBaseline = process.argv.includes("--baseline");
-const verifier = usarBaseline ? createInkPipelineVerifier() : verificadorDesdeModelos();
-const verifierName = usarBaseline ? "baseline-ink" : "two-tier";
+const usarGate = process.argv.includes("--gate");
+if (!usarBaseline && !usarGate) {
+  console.error("Elige verificador: --baseline (pipeline de tinta) o --gate (MobileCLIP)");
+  process.exit(2);
+}
+const elegido = usarBaseline
+  ? { verifier: createInkPipelineVerifier(), name: "baseline-ink" }
+  : await verificadorDesdeModelos();
+const verifier = elegido.verifier;
+const verifierName = elegido.name;
 
 const manifiesto = JSON.parse(
   await readFile(path.join(corpus, "manifest.json"), "utf8")

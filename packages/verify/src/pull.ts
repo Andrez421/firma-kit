@@ -60,6 +60,9 @@ export async function pullModels(options: PullOptions): Promise<PullReport> {
   for (const spec of specs) {
     for (const file of spec.files) {
       const target = path.join(dir, file.name);
+      // `name` puede ser una ruta relativa (`mobileclip-s0/onnx/...`): los
+      // modelos se organizan por carpeta, como los espera transformers.js.
+      await mkdir(path.dirname(target), { recursive: true });
 
       if (await exists(target)) {
         await checkExisting(target, file, report);

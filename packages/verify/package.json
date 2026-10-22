@@ -12,7 +12,8 @@
     "README.md"
   ],
   "dependencies": {
-    "@firma-kit/core": "workspace:*"
+    "@firma-kit/core": "workspace:*",
+    "@huggingface/transformers": "^4.3.1"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",

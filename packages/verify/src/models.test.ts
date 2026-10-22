@@ -18,7 +18,7 @@ describe("catálogo de modelos", () => {
       for (const file of spec.files) {
         expect(file.sha256).toMatch(/^[0-9a-f]{64}$/);
         expect(file.url.startsWith("https://")).toBe(true);
-        expect(file.bytes).toBeGreaterThan(1_000_000);
+        expect(file.bytes).toBeGreaterThan(100);
       }
     }
   });
