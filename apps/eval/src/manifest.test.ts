@@ -70,8 +70,8 @@ describe("parseManifest", () => {
 });
 
 describe("presupuestos", () => {
-  it("fija la métrica que no se negocia: falsos rechazos ≤ 2 %", () => {
+  it("fija la métrica que no se negocia: falsos rechazos ≤ 2 % y ≥ 90 % de negativos rechazados", () => {
     expect(BUDGETS.maxFalseRejectionRate).toBeLessThanOrEqual(0.02);
-    expect(BUDGETS.minFalseAcceptRate).toBeGreaterThanOrEqual(0.9);
+    expect(BUDGETS.minNegativeAccuracy).toBeGreaterThanOrEqual(0.9);
   });
 });

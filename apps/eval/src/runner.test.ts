@@ -42,7 +42,8 @@ describe("runEval", () => {
       falseNegatives: 0,
       falsePositives: 0,
       falseRejectionRate: 0,
-      falseAcceptRate: 1,
+      falseAcceptRate: 0,
+      negativeAccuracy: 1,
       passed: true,
       reasons: [],
     });
@@ -82,9 +83,11 @@ describe("runEval", () => {
       budgets: BUDGETS,
       verifierName: "test",
     });
+    // 5 de 10 negativos aceptados por error: el FAR real es el 50 %.
     expect(report.falseAcceptRate).toBeCloseTo(0.5);
+    expect(report.negativeAccuracy).toBeCloseTo(0.5);
     expect(report.passed).toBe(false);
-    expect(report.reasons.join(" ")).toMatch(/falsos aceptados/);
+    expect(report.reasons.join(" ")).toMatch(/rechaza .* de los negativos/);
   });
 
   it("un lote con material sin licencia no es evidencia, aunque el verificador acierte", async () => {
@@ -171,7 +174,12 @@ describe("runEval", () => {
       trueNegatives: 0,
       falsePositives: 0,
       falseRejectionRate: 0.2,
-      falseAcceptRate: 0,
+      falseAcceptRate: 1,
+      negativeAccuracy: 0,
+      falseRejectionInterval: { lower: 0.06, upper: 0.45 },
+      falseAcceptInterval: { lower: 0.7, upper: 1 },
+      negativeAccuracyInterval: { lower: 0, upper: 0.3 },
+      positivesNeeded: 150,
       latencyMs: { p50: 12, p95: 40, max: 55 },
       failures: [],
       passed: false,

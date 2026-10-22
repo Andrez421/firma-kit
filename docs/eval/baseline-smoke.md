@@ -28,7 +28,43 @@ people and hands (8), old handwritten documents (7). Three contain a real
 signature **inside** a document, which is the adversarial case the gate must get
 right.
 
-## Result (verifier: ink pipeline baseline)
+## Second pass — with licensed material only, plus generated negatives
+
+The first run could not be evidence. Two changes made a licensed set possible
+without collecting more data:
+
+1. **`--licensed-only`** drops `web-unverified` cases, so the report is `evidence: yes`.
+2. **`apps/eval/scripts/generate-synthetic-negatives.mjs`** renders documents
+   (invoice, receipt, form, screenshot, grid page, scribble, numeric table) with
+   real text, then degrades them like a phone photo (rotation, diagonal shadow,
+   sensor noise). They carry our own licence, so they count as evidence.
+
+### Licensed set: 89 images — 42 signatures, 47 negatives
+
+| Metric | Value |
+| --- | --- |
+| Confusion matrix | VP 42 · FN 0 · VN 2 · FP 45 |
+| False rejections | 0.0 % (95 % CI 0.0–8.4 %) |
+| Negatives accepted by mistake | **95.7 %** (95 % CI 85.8–98.8 %) |
+| Negatives correctly rejected | 4.3 % (95 % CI 1.2–14.2 %) |
+| Latency | p50 176 ms · p95 599 ms |
+
+Full set (171 images, including the 82 unlicensed): 94.6 % of negatives accepted
+by mistake, and the report says `evidence: no`.
+
+### Two things this measurement settled
+
+- **The label was wrong, and the run caught it.** The report used to print the
+  negative accuracy as "false accepts", showing 4.3 % where the true rate was
+  95.7 %. `Budgets.minFalseAcceptRate` became `minNegativeAccuracy`, and the docs
+  now say "negatives correctly rejected ≥ 90 %" instead of the self-contradictory
+  "false accepts ≥ 90 %".
+- **42 positives cannot certify the non-negotiable metric.** Zero false
+  rejections on 42 positives has a 95 % upper bound of 8.4 %, so ≤ 2 % cannot be
+  claimed yet. With zero errors the conservative bound is 3/N: **150 positives**
+  are needed. The report prints that number every run.
+
+## First pass (verifier: ink pipeline baseline)
 
 | Metric | Value |
 | --- | --- |

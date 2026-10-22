@@ -121,11 +121,17 @@ export function parseManifest(valor: unknown): CorpusEntry[] {
 export type Budgets = {
   /** Falsos rechazos sobre firmas reales. 1-2 % es el techo histórico. */
   maxFalseRejectionRate: number;
-  /** Falsos aceptados sobre negativos. */
-  minFalseAcceptRate: number;
+  /**
+   * Fracción de negativos que debe rechazarse correctamente.
+   *
+   * La documentación lo llamaba «falsos aceptados ≥ 90 %», que es lo contrario:
+   * 90 % de falsos aceptados sería un fracaso. Lo que se exige es acertar en el
+   * 90 % de los negativos.
+   */
+  minNegativeAccuracy: number;
 };
 
 export const BUDGETS: Budgets = {
   maxFalseRejectionRate: 0.02,
-  minFalseAcceptRate: 0.9,
+  minNegativeAccuracy: 0.9,
 };

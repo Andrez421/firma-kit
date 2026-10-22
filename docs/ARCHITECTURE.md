@@ -99,6 +99,6 @@ thresholds a batch of negatives is required (ID card, invoice, receipt,
 screenshot, object, hand, blank page): **30–50** minimum. Metrics:
 
 - false rejections on real signatures **≤ 1–2 %** (not negotiable);
-- false accepts on negatives **≥ 90 %**.
+- negatives correctly rejected **≥ 90 %** (the old wording, "false accepts ≥ 90 %", said the opposite).
 
 Español: [`ARCHITECTURE.es.md`](ARCHITECTURE.es.md).
