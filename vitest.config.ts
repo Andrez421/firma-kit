@@ -23,7 +23,19 @@ export default defineConfig({
         test: {
           name: "react",
           environment: "jsdom",
+          // Los tests que necesitan un canvas real corren en Node, no en jsdom.
+          exclude: ["packages/react/src/**/*.node.test.ts"],
           include: ["packages/react/src/**/*.test.{ts,tsx}"],
+        },
+      },
+      {
+        resolve: {
+          alias: { "@firma-kit/core": path.resolve(import.meta.dirname, "packages/core/src") },
+        },
+        test: {
+          name: "react-canvas",
+          environment: "node",
+          include: ["packages/react/src/**/*.node.test.ts"],
         },
       },
     ],

@@ -70,6 +70,7 @@ stylesheet `@firma-kit/react/firma-kit.css`. Manual test bench:
 - [`docs/SURVEY.md`](docs/SURVEY.md) — how the three existing implementations differ.
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — packages, data flow, models, privacy.
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — ADRs (Spanish).
+- [`packages/react/README.md`](packages/react/README.md) — component API, theme tokens, accessibility.
 
 Spanish: every doc has a `*.es.md` twin (`PRODUCT.es.md`, `ARCHITECTURE.es.md`, `SURVEY.es.md`).
 
