@@ -40,7 +40,7 @@ on-premise.
 
 **Consecuencias.** El caso normal cuesta decenas de milisegundos; el caso dudoso
 paga segundos. Sin GPU y sin sacar la imagen de la infraestructura. Los umbrales
-no se fijan hasta tener 30–50 negativos reales (ver `docs/ARCHITECTURE.md`).
+no se fijan hasta tener 30–50 negativos reales (ver `docs/ARCHITECTURE.es.md`).
 
 ## ADR-004 — Idioma
 

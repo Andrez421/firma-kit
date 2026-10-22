@@ -1,56 +1,58 @@
-# Relevamiento: las tres implementaciones existentes
+# Survey: the three existing implementations
 
-Revisado el 2026-10-21 leyendo el código de cada proyecto, no su documentación.
+Reviewed on 2026-10-21 by reading each project's code, not its documentation.
 
 ## pgaa (`~/Proyectos/pgaa`)
 
-| Archivo | Líneas | Qué hace |
+| File | Lines | What it does |
 | --- | --- | --- |
-| `lib/components/firma/SignatureCapture.tsx` | 328 | Modos `canvas` y `upload` con `react-signature-canvas`. Devuelve `{dataUrl, type, width, height}` |
-| `lib/utils/signature-cleaner.ts` | 244 | Limpieza propia: muestrea el color de los bordes, distancia euclidiana RGB (umbral 80), alfa proporcional, auto-crop, máx 500×200 |
-| `app/aprendiz/matricula/nueva/components/CanvasFirma.tsx` | 411 | Lienzo + subir + **foto** (`capture`), con la limpieza anterior |
-| `app/actions/firma-actions.ts` | 258 | Guarda `firma_<uid>.png` en Supabase Storage; borrar y leer |
+| `lib/components/firma/SignatureCapture.tsx` | 328 | `canvas` and `upload` modes with `react-signature-canvas`. Returns `{dataUrl, type, width, height}` |
+| `lib/utils/signature-cleaner.ts` | 244 | Its own cleanup: samples the border colour, RGB Euclidean distance (threshold 80), proportional alpha, auto-crop, max 500×200 |
+| `app/aprendiz/matricula/nueva/components/CanvasFirma.tsx` | 411 | Canvas + upload + **photo** (`capture`), using the cleanup above |
+| `app/actions/firma-actions.ts` | 258 | Stores `firma_<uid>.png` in Supabase Storage; delete and read |
 
-Fortalezas: la limpieza acepta fondos de **cualquier color** y no depende de
-que el papel sea blanco. Flujos separados aprendiz/tutor.
-Debilidades: sin modo "escribir"; la limpieza es global (no adaptativa) y no
-tiene pruebas; el umbral 80 la deja indefensa ante sombras y texturas.
+Strengths: the cleanup accepts backgrounds of **any colour** and does not assume
+white paper. Separate learner/tutor flows.
+Weaknesses: no "type" mode; the cleanup is global (not adaptive) and untested;
+the threshold of 80 leaves it defenceless against shadows and textures.
 
 ## GCly (`~/Proyectos/GCly`)
 
-| Archivo | Líneas | Qué hace |
+| File | Lines | What it does |
 | --- | --- | --- |
-| `apps/web/src/components/firma/firma-digital-section.tsx` | 242 | Pestañas **Dibujar / Subir imagen / Escribir** |
-| `firma-dibujar.tsx` | 149 | Lienzo |
-| `firma-escribir.tsx` | 204 | Nombre en 4 fuentes de Google (Dancing Script, Pacifico, Great Vibes, Sacramento) y `html-to-image` para exportar a PNG |
-| `firma-subir-imagen.tsx` | 252 | Archivo |
-| `firma-utils.ts` | 138 | `trimCanvas` (recorte por alfa), `canvasToBlob`, subida |
-| `packages/database/.../0016_sellos_firma.sql` | 33 | Evidencia de **sello PAdES** (sujeto/serie/sha256 del certificado, sha256 del PDF, fecha) |
-| `.../0017_firma_opciones.sql` | 15 | Tres flags: `firmar_word`, `firmar_pdf_imagen`, `firmar_pdf_certificado` |
+| `apps/web/src/components/firma/firma-digital-section.tsx` | 242 | **Draw / Upload image / Type** tabs |
+| `firma-dibujar.tsx` | 149 | Canvas |
+| `firma-escribir.tsx` | 204 | Name in 4 Google fonts (Dancing Script, Pacifico, Great Vibes, Sacramento) and `html-to-image` to export a PNG |
+| `firma-subir-imagen.tsx` | 252 | File |
+| `firma-utils.ts` | 138 | `trimCanvas` (alpha crop), `canvasToBlob`, upload |
+| `packages/database/.../0016_sellos_firma.sql` | 33 | **PAdES seal** evidence (certificate subject/serial/sha256, PDF sha256, date) |
+| `.../0017_firma_opciones.sql` | 15 | Three flags: `firmar_word`, `firmar_pdf_imagen`, `firmar_pdf_certificado` |
 
-Fortalezas: el modo "escribir" ya existe y funciona; monorepo con paquetes;
-modelo de evidencia de sellado.
-Debilidades: **sin limpieza de fondo** (una foto entra tal cual), fuentes
-cargadas desde Google Fonts en runtime (dependencia externa y salto de layout),
-exportación con `html-to-image` (dependencia pesada para un PNG de texto).
+Strengths: the "type" mode exists and works; monorepo with packages; a seal
+evidence model.
+Weaknesses: **no background cleanup** (a photo goes in as it is), fonts loaded
+from Google Fonts at runtime (external dependency and layout shift), export via
+`html-to-image` (a heavy dependency for a PNG of text).
 
-## registro_asistencia (este repo, la referencia madura)
+## registro_asistencia (the mature reference)
 
-- Pipeline de tinta **validado contra 1 018 firmas reales** en producción:
-  `extractSignature` (limpieza directa → cascada con realce de niveles),
-  recorte al trazo, aplanado sobre blanco y gates (`sin_tinta`,
-  `fondo_oscuro`, `no_es_firma`, `ruido`). 25 tests.
-- Modos `dibujar` / `subir` / `foto` (sin "escribir").
-- Reproceso histórico con respaldo y escritura atómica.
+- Ink pipeline **validated against 1 018 real signatures** in production:
+  `extractSignature` (direct cleanup → cascade with level enhancement), crop to
+  the stroke, flatten onto white, and gates (`no_ink`, `dark_background`,
+  `not_a_signature`, `noise`). 25 tests.
+- `dibujar` / `subir` / `foto` modes (no "type").
+- Historical reprocessing with backup and atomic writes.
 
-## Qué unifica firma-kit
+## What firma-kit unifies
 
-| Necesidad | pgaa | GCly | registro_asistencia | firma-kit |
+| Need | pgaa | GCly | registro_asistencia | firma-kit |
 | --- | --- | --- | --- | --- |
-| Dibujar | sí | sí | sí | fase 1 |
-| Escribir con fuentes | no | sí (Google Fonts) | no | fase 1 (fuentes self-hosted) |
-| Subir / foto | sí | sí (sin limpieza) | sí + validación | fase 1 |
-| Limpieza de tinta | propia, sin tests | no | validada | **portada** |
-| Rechazo explicable | no | no | sí (5 motivos) | **portado** |
-| Verificación visual | no | no | no | fase 3 |
-| Pruebas | parciales | sí (componente) | 25 + 6 | base actual |
+| Draw | yes | yes | yes | phase 1, done |
+| Type with fonts | no | yes (Google Fonts) | no | phase 1, done (self-hosted OFL fonts) |
+| Upload / photo | yes | yes (no cleanup) | yes + validation | phase 1, done |
+| Ink cleanup | own, untested | no | validated | **ported** |
+| Explained rejection | no | no | yes (5 reasons) | **ported**, now 9 reasons in English and Spanish |
+| Visual verification | no | no | no | phase 3 |
+| Tests | partial | yes (component) | 25 + 6 | 88 today |
+
+Español: [`SURVEY.es.md`](SURVEY.es.md).

@@ -5,7 +5,7 @@ extracción de tinta, quita de fondo y verificación visual en el dispositivo.
 
 > Estado: **andamiaje**. El pipeline de tinta ya está portado y probado; los
 > componentes React y la verificación visual están en el roadmap
-> ([`docs/PRODUCT.md`](docs/PRODUCT.md)).
+> ([`docs/PRODUCT.es.md`](docs/PRODUCT.es.md)).
 
 ## Por qué
 
@@ -44,9 +44,9 @@ pnpm test        # 83 tests del pipeline de tinta
 
 ## Documentación
 
-- [`docs/PRODUCT.md`](docs/PRODUCT.md) — visión, alcance, fases, no-alcance.
-- [`docs/SURVEY.md`](docs/SURVEY.md) — cómo difieren las tres implementaciones.
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — paquetes, flujo, modelos, privacidad.
+- [`docs/PRODUCT.es.md`](docs/PRODUCT.es.md) — visión, alcance, fases, no-alcance.
+- [`docs/SURVEY.es.md`](docs/SURVEY.es.md) — cómo difieren las tres implementaciones.
+- [`docs/ARCHITECTURE.es.md`](docs/ARCHITECTURE.es.md) — paquetes, flujo, modelos, privacidad.
 - [`docs/DECISIONS.md`](docs/DECISIONS.md) — ADRs.
 
 ## Licencia
