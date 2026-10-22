@@ -194,18 +194,6 @@ export function Controls({ config, activePreset, onChange, onPreset }: Props) {
         <p className="hint">{copy.nameNote}</p>
         <div className="row">
           <label className="field">
-            <span>{copy.lines}</span>
-            <select
-              value={String(config.maxLines)}
-              onChange={(evento) =>
-                parche({ maxLines: Number(evento.target.value) === 1 ? 1 : 2 })
-              }
-            >
-              <option value="1">1</option>
-              <option value="2">2</option>
-            </select>
-          </label>
-          <label className="field">
             <span>{copy.font}</span>
             <select
               value={config.font}

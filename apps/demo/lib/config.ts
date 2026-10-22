@@ -25,7 +25,6 @@ export type DemoConfig = {
   fieldTheme: "auto" | "light" | "dark";
   modes: SignatureMode[];
   initialMode: SignatureMode;
-  maxLines: 1 | 2;
   font: TypeFont;
   maxBytesKb: number;
   name: string;
@@ -49,8 +48,6 @@ export const DEFAULT_CONFIG: DemoConfig = {
   fieldTheme: "auto",
   modes: ALL_MODES,
   initialMode: "draw",
-  // Una línea por defecto: es lo que pide casi todo el mundo y cabe sin apretar.
-  maxLines: 1,
   font: "Caveat",
   maxBytesKb: 5120,
   // Con un nombre por defecto se ven los cuatro modos al abrir la página; borrarlo
@@ -74,7 +71,6 @@ export function propsFor(config: DemoConfig, pageTheme: PageTheme) {
     theme: tema,
     modes: config.modes,
     initialMode: config.initialMode,
-    maxLines: config.maxLines,
     font: config.font,
     maxBytes: config.maxBytesKb * 1024,
     stroke: config.stroke,
@@ -110,7 +106,6 @@ export function normalizar(parcial: unknown): DemoConfig {
       datos.fieldTheme === "light" || datos.fieldTheme === "dark" ? datos.fieldTheme : "auto",
     modes: modos,
     initialMode: inicial,
-    maxLines: datos.maxLines === 1 ? 1 : 2,
     font: FONTS.includes(datos.font as TypeFont) ? (datos.font as TypeFont) : DEFAULT_CONFIG.font,
     maxBytesKb: clamp(Number(datos.maxBytesKb), 64, 20480, DEFAULT_CONFIG.maxBytesKb),
     name: typeof datos.name === "string" ? datos.name.slice(0, 80) : "",
