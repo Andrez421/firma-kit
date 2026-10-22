@@ -188,6 +188,22 @@
   margin: 0;
 }
 
+.signature__result {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* La firma se muestra como se va a guardar: tinta sobre blanco, con su tamaño
+   real. El borde ayuda a ver el recorte cuando el papel también es blanco. */
+.signature__result-image {
+  background: #ffffff;
+  border: 1px solid var(--signature-border);
+  border-radius: calc(var(--signature-radius) / 2);
+  max-width: 100%;
+  width: min(320px, 100%);
+}
+
 .signature__status {
   color: var(--signature-muted);
   margin: 0;
