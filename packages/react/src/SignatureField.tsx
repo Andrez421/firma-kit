@@ -8,12 +8,14 @@ import {
   rejectionMessage,
   sign,
   rasterizeStroke,
+  TYPE_FONTS,
   type Bitmap,
   type PngEncoder,
   type Signature,
   type TextMeasurer,
   type Locale,
   type SignatureMode,
+  type TypeFont,
   type RejectionReason,
   type SignatureOptions,
   type StrokePoint,
@@ -36,6 +38,7 @@ import {
   loadFont,
   createCanvasTextMeasurer,
   createCanvasTextRasterizer,
+  fontFamily,
 } from "./rasterizer.js";
 
 // Etiquetas de pestaña en los dos idiomas: el inglés es el primario, el español
@@ -52,6 +55,7 @@ const TAB_LABELS: Record<Locale, Record<SignatureMode, string>> = {
  */
 type FieldText = {
   canvas: string;
+  fontLabel: string;
   typeHint: string;
   typeEmpty: string;
   chooseFile: string;
@@ -66,6 +70,7 @@ type FieldText = {
 const FIELD_TEXT: Record<Locale, FieldText> = {
   en: {
     canvas: "Area to draw the signature with a finger or pointer",
+    fontLabel: "Handwriting style",
     typeHint: "Your name will be written in cursive",
     typeEmpty: "Type your name to see it in cursive.",
     chooseFile: "Choose an image before continuing.",
@@ -78,6 +83,7 @@ const FIELD_TEXT: Record<Locale, FieldText> = {
   },
   es: {
     canvas: "Zona para dibujar la firma con el dedo o el puntero",
+    fontLabel: "Estilo de letra",
     typeHint: "Tu nombre se escribirá en cursiva",
     typeEmpty: "Escribe tu nombre para verlo en cursiva.",
     chooseFile: "Elige una imagen antes de continuar.",
@@ -115,6 +121,11 @@ export type SignatureFieldProps = {
    * la página que lo hospeda.
    */
   theme?: "light" | "dark";
+  /** Cursivas ofrecidas en el modo escribir. Por defecto, las cuatro del paquete. */
+  fonts?: TypeFont[];
+  /** Cursiva elegida (modo controlado). */
+  font?: TypeFont;
+  onFontChange?: (font: TypeFont) => void;
   label?: string;
   className?: string;
   /** Puertos inyectables: pruebas sin canvas real. */
@@ -182,6 +193,9 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       label,
       locale = "en",
       theme,
+      fonts = [...TYPE_FONTS],
+      font,
+      onFontChange,
       className,
       encoder,
       measurer,
@@ -201,6 +215,9 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
     const [signature, setSignature] = useState<Signature | null>(value ?? null);
     const [error, setError] = useState<string | null>(null);
     const [busy, setBusy] = useState(false);
+    // La cursiva elegida: controlada por el padre si pasa `font`, si no interna.
+    const [chosenFont, setChosenFont] = useState<TypeFont>(font ?? fonts[0] ?? "Caveat");
+    const activeFont = font ?? chosenFont;
 
     const drawing = useRef(false);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -270,7 +287,9 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
             coreOptions
           );
         } else if (mode === "type") {
-          await loadFont("Caveat", 72);
+          // Se carga la cursiva elegida antes de medir: si se mide con la de
+          // reserva, el nombre se sale de la caja.
+          await loadFont(activeFont, 72);
           result = await sign(
             {
               mode: "type",
@@ -278,6 +297,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
               canvas: CANVAS_SIZE,
               measurer: effectiveMeasurer,
               rasterizer: effectiveRasterizer,
+              font: activeFont,
             },
             effectiveEncoder,
             coreOptions
@@ -328,6 +348,9 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       points,
       effectiveRasterizer,
       value,
+      // Sin esto el callback se queda con la cursiva inicial: el test de
+      // elección de fuente lo detectó.
+      activeFont,
     ]);
 
     useImperativeHandle(
@@ -434,11 +457,44 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
           ) : null}
 
           {mode === "type" ? (
-            <p className="signature__preview" aria-live="polite">
-              {name?.trim()
-                ? `${texts.typeHint}: ${name.trim()}`
-                : texts.typeEmpty}
-            </p>
+            <div className="signature__fonts">
+              {fonts.length > 1 ? (
+                <div
+                  className="signature__font-options"
+                  role="radiogroup"
+                  aria-label={texts.fontLabel}
+                >
+                  {fonts.map((option) => (
+                    <label
+                      key={option}
+                      className={
+                        option === activeFont
+                          ? "signature__font signature__font--active"
+                          : "signature__font"
+                      }
+                      style={{ fontFamily: fontFamily(option) }}
+                    >
+                      <input
+                        type="radio"
+                        name={`${baseId}-font`}
+                        value={option}
+                        checked={option === activeFont}
+                        onChange={() => {
+                          if (font === undefined) setChosenFont(option);
+                          onFontChange?.(option);
+                        }}
+                      />
+                      {option}
+                    </label>
+                  ))}
+                </div>
+              ) : null}
+              <p className="signature__preview" aria-live="polite">
+                {name?.trim()
+                  ? `${texts.typeHint}: ${name.trim()}`
+                  : texts.typeEmpty}
+              </p>
+            </div>
           ) : null}
 
           {mode === "upload" || mode === "camera" ? (

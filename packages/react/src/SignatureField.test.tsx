@@ -179,6 +179,63 @@ describe("<SignatureField />", () => {
     expect(onRejection).not.toHaveBeenCalled();
   });
 
+  it("offers the four handwriting styles and uses the chosen one", async () => {
+    const familias: string[] = [];
+    const rasterizer: TextRasterizer = {
+      rasterize: (_lineas, estilo, _interlineado, caja) => {
+        familias.push(estilo.family);
+        const data = new Uint8ClampedArray(caja.width * caja.height * 4).fill(255);
+        for (let y = 40; y < 48; y++) {
+          for (let x = 40; x < 240; x++) {
+            const i = (y * caja.width + x) * 4;
+            data[i] = 20;
+            data[i + 1] = 20;
+            data[i + 2] = 20;
+          }
+        }
+        return { data, width: caja.width, height: caja.height };
+      },
+    };
+    render(
+      <SignatureField
+        name="Ana Muñoz"
+        encoder={encoder()}
+        measurer={measurer}
+        rasterizer={rasterizer}
+      />
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Type" }));
+
+    // Las cuatro del paquete, como radios de verdad.
+    const opciones = screen.getAllByRole("radio");
+    expect(opciones.map((o) => o.getAttribute("value"))).toEqual([
+      "Caveat",
+      "Pacifico",
+      "Great Vibes",
+      "Sacramento",
+    ]);
+
+    fireEvent.click(screen.getByRole("radio", { name: "Pacifico" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use this signature" }));
+    await waitFor(() => expect(familias.length).toBeGreaterThan(0));
+    expect(familias.at(-1)).toBe("Pacifico");
+  });
+
+  it("hides the chooser when only one style is offered", () => {
+    render(<SignatureField name="Ana" fonts={["Caveat"]} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Type" }));
+    expect(screen.queryAllByRole("radio")).toHaveLength(0);
+  });
+
+  it("lets the parent control the style", () => {
+    render(<SignatureField name="Ana" font="Great Vibes" onFontChange={() => {}} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Type" }));
+    const elegida = screen
+      .getAllByRole("radio")
+      .find((o) => (o as HTMLInputElement).checked);
+    expect(elegida?.getAttribute("value")).toBe("Great Vibes");
+  });
+
   it("renders the theme attribute the stylesheet keys on", () => {
     // La hoja pinta su propia superficie según `data-theme`; si el atributo no
     // llega al DOM, en un esquema oscuro el texto queda blanco sobre blanco.
