@@ -4,7 +4,9 @@
   "description": "Componentes React del módulo de firma: pestañas dibujar / escribir / subir / foto.",
   "license": "MIT",
   "type": "module",
-  "sideEffects": false,
+  "sideEffects": [
+    "**/*.css"
+  ],
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "files": [
@@ -46,5 +48,25 @@
     },
     "./firma-kit.css": "./firma-kit.css",
     "./fonts.css": "./assets/fonts.css"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Andrez421/firma-kit.git",
+    "directory": "packages/react"
+  },
+  "homepage": "https://github.com/Andrez421/firma-kit#readme",
+  "bugs": {
+    "url": "https://github.com/Andrez421/firma-kit/issues"
+  },
+  "keywords": [
+    "signature",
+    "firma",
+    "react",
+    "component",
+    "canvas",
+    "accessibility"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

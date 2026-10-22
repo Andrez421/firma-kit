@@ -1,0 +1,27 @@
+// Esquema mínimo para guardar firmas. SQLite porque el ejemplo tiene que correr sin
+// credenciales; cambiar el provider a postgresql o mysql no toca nada más.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Firma {
+  id        String   @id @default(cuid())
+  /// SHA-256 del PNG: permite deduplicar y detectar si el archivo cambió.
+  hash      String   @unique
+  /// El PNG tal cual lo devuelve el módulo: tinta sobre blanco, opaco.
+  png       Bytes
+  width     Int
+  height    Int
+  mode      String
+  /// A quién corresponde la firma en tu sistema. El módulo no lo sabe.
+  sujetoId  String?
+  createdAt DateTime @default(now())
+
+  @@index([sujetoId])
+}
