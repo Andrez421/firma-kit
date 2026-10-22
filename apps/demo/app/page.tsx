@@ -21,12 +21,24 @@ import { presetById, type PageTheme } from "../lib/presets.js";
 const GATE_URL = process.env.NEXT_PUBLIC_GATE_URL ?? "http://127.0.0.1:8790";
 const GATE_TOKEN = process.env.NEXT_PUBLIC_GATE_TOKEN ?? "";
 const GATE_TIMEOUT_MS = 8_000;
+
+/** Los avisos del gate, en cualquiera de los dos idiomas. */
+type NotasDelGate = (typeof PAGE_COPY)[keyof typeof PAGE_COPY]["gateNotes"];
+
+/** Traduce el estado HTTP del gate a algo que se pueda accionar. */
+function motivoDelFallo(estado: number, notas: NotasDelGate): string {
+  if (estado === 401) return notas.unauthorized;
+  if (estado === 403) return `${notas.origin} ${window.location.origin}`;
+  if (estado === 413) return notas.tooLarge;
+  if (estado === 429) return notas.rateLimited;
+  return notas.unavailable;
+}
 const REPO_URL = "https://github.com/Andrez421/firma-kit";
 const THEME_KEY = "firma-kit-demo-theme";
 
 type FalloDelGate = Error & { reintentar?: boolean; esperaMs?: number };
 
-async function pedirVeredicto(imagen: Bitmap): Promise<Verdict> {
+async function pedirVeredicto(imagen: Bitmap, notas: NotasDelGate): Promise<Verdict> {
   const res = await fetch(`${GATE_URL}/verificar?w=${imagen.width}&h=${imagen.height}`, {
     method: "POST",
     body: new Uint8Array(imagen.data),
@@ -34,7 +46,7 @@ async function pedirVeredicto(imagen: Bitmap): Promise<Verdict> {
     signal: AbortSignal.timeout(GATE_TIMEOUT_MS),
   });
   if (!res.ok) {
-    const fallo = new Error(`gate ${res.status}`) as FalloDelGate;
+    const fallo = new Error(motivoDelFallo(res.status, notas)) as FalloDelGate;
     fallo.reintentar = res.status === 503;
     const indicado = Number(res.headers.get("retry-after") ?? "1");
     fallo.esperaMs = Math.min(2_000, (Number.isFinite(indicado) ? indicado : 1) * 1_000);
@@ -50,6 +62,9 @@ export default function Page() {
   const [gate, setGate] = useState<"checking" | "on" | "off">("checking");
   const [gateNote, setGateNote] = useState<string | null>(null);
   const [rejection, setRejection] = useState<string | null>(null);
+  // Cuando el servicio no da veredicto no se puede decir «no es una firma»: se dice
+  // que no se pudo comprobar, y por qué. Es la diferencia entre un rechazo y un fallo.
+  const [gateFailure, setGateFailure] = useState<string | null>(null);
   const [copiado, setCopiado] = useState<"nada" | "props" | "enlace">("nada");
   const field = useRef<SignatureFieldHandle | null>(null);
 
@@ -98,21 +113,30 @@ export default function Page() {
     () => ({
       verify: async (imagen: Bitmap): Promise<Verdict> => {
         try {
-          return await pedirVeredicto(imagen);
+          return await pedirVeredicto(imagen, copy.gateNotes);
         } catch (error) {
           const fallo = error as FalloDelGate;
           const deRed = fallo.reintentar === undefined;
           if (!deRed && fallo.reintentar !== true) {
             setGateNote(copy.gateFailedNote);
+            setGateFailure(`${fallo.message} ${copy.gateNotes.acceptedWithout}`);
             throw error;
           }
           await new Promise((listo) =>
             setTimeout(listo, (fallo.esperaMs ?? 0) + 150 + Math.random() * 250)
           );
           try {
-            return await pedirVeredicto(imagen);
+            return await pedirVeredicto(imagen, copy.gateNotes);
           } catch (segundo) {
+            // Un fallo de red no trae mensaje traducido: es el `TypeError` del
+            // navegador («Failed to fetch»), así que se cuenta como servicio caído.
+            const esRed = (segundo as FalloDelGate).reintentar === undefined;
+            const motivo =
+              esRed || !(segundo instanceof Error)
+                ? copy.gateNotes.unavailable
+                : segundo.message;
             setGateNote(copy.gateFailedNote);
+            setGateFailure(`${motivo} ${copy.gateNotes.acceptedWithout}`);
             throw segundo;
           }
         }
@@ -162,7 +186,7 @@ export default function Page() {
   const claveCampo = `${config.modes.join("-")}|${config.initialMode}`;
 
   return (
-    <main className={rejection ? "demo-modal-open" : undefined}>
+    <main className={rejection || gateFailure ? "demo-modal-open" : undefined}>
       <header className="demo-header">
         <div>
           <h1>{copy.title}</h1>
@@ -201,12 +225,15 @@ export default function Page() {
         </div>
       </header>
 
-      {rejection ? (
+      {rejection || gateFailure ? (
         <RejectionDialog
-          title={copy.rejectionTitle}
-          message={rejection}
+          title={rejection ? copy.rejectionTitle : copy.failedTitle}
+          message={rejection ?? gateFailure ?? ""}
           close={copy.rejectionClose}
-          onClose={() => setRejection(null)}
+          onClose={() => {
+            setRejection(null);
+            setGateFailure(null);
+          }}
         />
       ) : null}
 
@@ -219,6 +246,7 @@ export default function Page() {
             className={preset.className}
             style={preset.vars as React.CSSProperties}
             {...(gate === "on" ? { verifier } : {})}
+            onFontChange={(fuente) => setConfig((actual) => ({ ...actual, font: fuente }))}
             onSignature={(next) => {
               setSignature(next);
               setRejection(null);

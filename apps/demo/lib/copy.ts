@@ -15,6 +15,14 @@ export const PAGE_COPY = {
     gateOffNote:
       "The visual check is not running, so this page is not verifying anything. The field still works: verification is a safeguard, never a requirement to sign.",
     gateFailedNote: "The visual check failed for this image. You can still sign.",
+    gateNotes: {
+      unauthorized: "The gate rejected the token (401). Check NEXT_PUBLIC_GATE_TOKEN.",
+      origin: "The gate does not allow this page's origin (403). Add it to GATE_ORIGINS:",
+      tooLarge: "The gate refused the image for its size (413).",
+      rateLimited: "Too many checks in a row (429). Wait a moment and try again.",
+      unavailable: "The gate did not answer. Is the service running?",
+      acceptedWithout: "The signature was accepted without the visual check.",
+    },
     result: "Result",
     empty: "Nothing signed yet.",
     mode: "Mode",
@@ -30,6 +38,7 @@ export const PAGE_COPY = {
     integration: "How to integrate this in your project →",
     preview: "Preview",
     rejectionTitle: "That image is not a signature",
+    failedTitle: "The image could not be checked",
     rejectionClose: "Understood",
   },
   es: {
@@ -44,6 +53,14 @@ export const PAGE_COPY = {
     gateOffNote:
       "La comprobación visual no está funcionando, así que esta página no está verificando nada. El campo sigue funcionando: la verificación es una salvaguarda, nunca un requisito para firmar.",
     gateFailedNote: "La comprobación visual falló con esta imagen. Puedes firmar igual.",
+    gateNotes: {
+      unauthorized: "El servicio rechazó el token (401). Revisa NEXT_PUBLIC_GATE_TOKEN.",
+      origin: "El servicio no permite el origen de esta página (403). Añádelo a GATE_ORIGINS:",
+      tooLarge: "El servicio rechazó la imagen por tamaño (413).",
+      rateLimited: "Demasiadas comprobaciones seguidas (429). Espera un momento e inténtalo otra vez.",
+      unavailable: "El servicio no respondió. ¿Está levantado?",
+      acceptedWithout: "La firma se aceptó sin la comprobación visual.",
+    },
     result: "Resultado",
     empty: "Todavía no has firmado nada.",
     mode: "Modo",
@@ -59,6 +76,7 @@ export const PAGE_COPY = {
     integration: "Cómo integrar esto en tu proyecto →",
     preview: "Vista previa",
     rejectionTitle: "Esa imagen no corresponde a una firma",
+    failedTitle: "No se pudo comprobar la imagen",
     rejectionClose: "Entendido",
   },
 } as const;
@@ -80,7 +98,6 @@ export const PANEL_COPY = {
     typeMode: "Type mode",
     name: "Name to write",
     nameNote: "Without a name, type mode has nothing to render.",
-    lines: "Lines",
     font: "Cursive",
     stroke: "Stroke",
     minWidth: "Thinnest",
@@ -120,7 +137,6 @@ export const PANEL_COPY = {
     typeMode: "Modo escribir",
     name: "Nombre a escribir",
     nameNote: "Sin nombre, el modo escribir no tiene nada que pintar.",
-    lines: "Líneas",
     font: "Cursiva",
     stroke: "Trazo",
     minWidth: "Más fino",

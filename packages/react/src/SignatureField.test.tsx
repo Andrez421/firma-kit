@@ -465,7 +465,7 @@ describe("<SignatureField />", () => {
     expect(onRejection).not.toHaveBeenCalled();
   });
 
-  it("offers the four handwriting styles and uses the chosen one", async () => {
+  it("offers the ten handwriting styles and uses the chosen one", async () => {
     const familias: string[] = [];
     const rasterizer: TextRasterizer = {
       rasterize: (_lineas, estilo, _interlineado, caja) => {
@@ -492,8 +492,7 @@ describe("<SignatureField />", () => {
     );
     fireEvent.click(screen.getByRole("tab", { name: "Type" }));
 
-    // Las cuatro del paquete, como radios de verdad, dentro de su grupo (el modo
-    // escribir tiene además el grupo de líneas).
+    // Las diez del paquete, como radios de verdad, dentro de su grupo.
     const grupo = screen.getByRole("radiogroup", { name: /handwriting/i });
     const opciones = within(grupo).getAllByRole("radio");
     expect(opciones.map((o) => o.getAttribute("value"))).toEqual([
@@ -501,6 +500,12 @@ describe("<SignatureField />", () => {
       "Pacifico",
       "Great Vibes",
       "Sacramento",
+      "Dancing Script",
+      "Alex Brush",
+      "Allura",
+      "Parisienne",
+      "Kaushan Script",
+      "Marck Script",
     ]);
 
     fireEvent.click(within(grupo).getByRole("radio", { name: "Pacifico" }));
@@ -513,8 +518,8 @@ describe("<SignatureField />", () => {
     render(<SignatureField name="Ana" fonts={["Caveat"]} />);
     fireEvent.click(screen.getByRole("tab", { name: "Type" }));
     expect(screen.queryByRole("radiogroup", { name: /handwriting/i })).toBeNull();
-    // El grupo de líneas sigue disponible.
-    expect(screen.getByRole("radiogroup", { name: /lines/i })).toBeTruthy();
+    // El recuadro sigue ahí: es donde se escribe, no una opción.
+    expect(document.querySelector(".signature__type-box")).toBeTruthy();
   });
 
   it("lets the parent control the style", () => {
@@ -563,7 +568,6 @@ describe("<SignatureField />", () => {
     render(
       <SignatureField
         name="Ana Muñoz"
-        maxLines={1}
         encoder={encoder()}
         measurer={measurer}
         rasterizer={rasterizer}
@@ -572,7 +576,7 @@ describe("<SignatureField />", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Type" }));
     fireEvent.click(screen.getByRole("button", { name: "Use this signature" }));
     await waitFor(() => expect(alto).toBeGreaterThan(0));
-    // Una línea usa una hoja más baja que dos.
+    // El recuadro por defecto deja una hoja baja: 120px de alto.
     expect(alto).toBe(120);
   });
 
@@ -680,18 +684,19 @@ describe("barra de acciones", () => {
 });
 
 describe("modo escribir y cámara", () => {
-  const lineas = (container: HTMLElement, etiqueta: string) =>
-    within(container).getByLabelText(etiqueta) as HTMLInputElement;
+  it("ajusta el recuadro de escribir arrastrando o con las flechas", () => {
+    const { container } = render(<SignatureField name="María" modes={["type"]} />);
+    const caja = container.querySelector<HTMLElement>(".signature__type-box")!;
+    const anchoInicial = caja.style.width;
 
-  it("sigue la prop maxLines cuando el padre la cambia", () => {
-    // Antes la prop solo se leía al montar: un panel que la cambiara no hacía nada.
-    const { container, rerender } = render(
-      <SignatureField name="María" modes={["type"]} maxLines={2} />
-    );
-    expect(lineas(container, "Two lines").checked).toBe(true);
+    // Las cuatro esquinas son botones accesibles, no decoración.
+    const esquinas = screen.getAllByRole("button", { name: /Resize the signing box/ });
+    expect(esquinas).toHaveLength(4);
 
-    rerender(<SignatureField name="María" modes={["type"]} maxLines={1} />);
-    expect(lineas(container, "One line").checked).toBe(true);
+    const sureste = screen.getByRole("button", { name: /Resize the signing box \(se\)/ });
+    fireEvent.keyDown(sureste, { key: "ArrowRight" });
+    expect(caja.style.width).not.toBe(anchoInicial);
+    expect(parseInt(caja.style.width, 10)).toBeGreaterThan(parseInt(anchoInicial, 10));
   });
 
   it("dice «Open camera» en vez del texto del sistema para elegir archivo", () => {

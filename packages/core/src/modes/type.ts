@@ -6,17 +6,24 @@
 // qué tamaño se toma sin DOM, con un medidor inyectado, y se puede probar en
 // Node. ADR-001 sigue intacto.
 //
-// Las fuentes son las cuatro de GCly (ya usadas con personas reales), todas OFL
-// y self-hosted: sin Google Fonts en runtime y sin `html-to-image`.
+// Las fuentes son diez cursivas, todas OFL y self-hosted: sin Google Fonts en
+// runtime y sin `html-to-image`. Las cuatro primeras vienen de GCly (ya usadas con
+// personas reales); las seis siguientes amplían la elección.
 
 import type { Bitmap } from "../types.js";
 
-/** Las cuatro cursivas available, por orden de preferencia. */
+/** Las cursivas disponibles, por orden de preferencia. */
 export const TYPE_FONTS = [
   "Caveat",
   "Pacifico",
   "Great Vibes",
   "Sacramento",
+  "Dancing Script",
+  "Alex Brush",
+  "Allura",
+  "Parisienne",
+  "Kaushan Script",
+  "Marck Script",
 ] as const;
 
 export type TypeFont = (typeof TYPE_FONTS)[number];
