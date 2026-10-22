@@ -12,9 +12,16 @@ export const metadata: Metadata = {
     "Four ways to sign, one PNG out, and a visual check that refuses what is not a signature.",
 };
 
+// Se aplica el tema guardado antes del primer pintado: sin esto, quien elige oscuro
+// ve un destello blanco en cada carga.
+const SIN_DESTELLO = `try{const g=localStorage.getItem("firma-kit-demo-theme");const p=window.matchMedia("(prefers-color-scheme: dark)").matches;document.documentElement.dataset.theme=g==="light"||g==="dark"?g:(p?"dark":"light");}catch{}`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: SIN_DESTELLO }} />
+      </head>
       <body>{children}</body>
     </html>
   );
