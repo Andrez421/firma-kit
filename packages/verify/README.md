@@ -30,14 +30,20 @@ firma-kit-verify models pull      # explicit, never on a first request
 firma-kit-verify doctor           # offline: what is missing, what mismatches
 ```
 
-`models pull` refuses to download any file whose SHA-256 is not pinned unless you
-pass `--allow-unverified` on purpose. A weight file with an unexpected hash is
-treated as corruption, never silently replaced.
+Every weight has its SHA-256 pinned in `src/models.ts`, and a test fails if one is
+ever `null`: a weight without a hash has no verifiable provenance. `models pull`
+refuses to download an unhashed file unless you pass `--allow-unverified` on
+purpose, and a file on disk with a different hash is treated as corruption, never
+silently replaced.
 
 | Tier | Model | Licence | Role |
 | --- | --- | --- | --- |
-| 1 | MobileCLIP-S0 int8 (≈55 MB of ONNX) | Apple Sample Code | cheap gate, tens of ms |
-| 2 | SmolVLM-256M Q4_K_M + mmproj (≈300 MB) | Apache-2.0 | second opinion only when ambiguous |
+| 1 | MobileCLIP-S0 int8 (≈55 MB of ONNX) | apple-amlr (not redistributable) | cheap gate, tens of ms |
+| 2 | SmolVLM-256M Q8_0 + mmproj (≈270 MB) | Apache-2.0 | second opinion only when ambiguous |
+
+Tier 2 uses `Q8_0` because the official `ggml-org` repository does not publish a
+`Q4_K_M` quantisation; only `Q8_0` and `f16` exist. The official repository is
+preferred over a third-party mirror.
 
 ## Thresholds
 

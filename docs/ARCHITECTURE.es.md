@@ -44,7 +44,7 @@ Dos niveles, **ambos en CPU**, la imagen nunca sale de la infraestructura:
 | Nivel | Modelo | Tamaño | Latencia | Papel |
 | --- | --- | --- | --- | --- |
 | 1 | MobileCLIP-S0 int8 (zero-shot imagen↔texto) | presupuesto ~90 MB | ~50 ms | gate: ¿la clase ganadora es "firma manuscrita"? |
-| 2 | SmolVLM-256M GGUF Q4 | ~300 MB | ~1–2 s | segunda opinión solo si el nivel 1 es ambiguo |
+| 2 | SmolVLM-256M GGUF Q8_0 | ~270 MB | ~1–2 s | segunda opinión solo si el nivel 1 es ambiguo |
 
 Los ONNX int8 publicados miden ≈55 MB (visión 11,8 MB + texto 42,8 MB); el presupuesto del nivel 1 se ajusta al dimensionar el contenedor en la fase 3.
 
