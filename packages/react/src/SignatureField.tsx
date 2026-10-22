@@ -203,9 +203,11 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
     // hay un verificador de verdad, así que "no verificar" tiene una única
     // representación.
     const coreOptions = useMemo<SignatureOptions>(() => {
-      const base: SignatureOptions = { maxWidth };
+      // `locale` viaja al core: si no, la alerta de rechazo saldría en inglés
+      // con la interfaz en español.
+      const base: SignatureOptions = { maxWidth, locale };
       return verifier ? { ...base, verifier } : base;
-    }, [maxWidth, verifier]);
+    }, [locale, maxWidth, verifier]);
 
     // El lienzo de dibujar se pinta con el mismo rasterizador puro que usa el
     // core: lo que se ve es exactamente lo que se va a guardar.

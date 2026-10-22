@@ -7,6 +7,7 @@ import {
   availableModes,
   type SignatureFieldHandle,
 } from "./SignatureField.js";
+import { MESSAGES_ES } from "@firma-kit/core";
 import type { Bitmap, TextRasterizer } from "@firma-kit/core";
 
 afterEach(cleanup);
@@ -133,6 +134,25 @@ describe("<SignatureField />", () => {
       await screen.findByText("Choose an image before continuing")
     ).toBeTruthy();
     expect(onRejection).not.toHaveBeenCalled();
+  });
+
+  it("returns the rejection message in the requested language", async () => {
+    const onRejection = vi.fn();
+    render(
+      <SignatureField
+        locale="es"
+        onRejection={onRejection}
+        encoder={encoder()}
+      />
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Usar esta firma" }));
+    await screen.findByRole("alert");
+    // El mensaje viene del core, no de la tabla de etiquetas: si `locale` no
+    // viaja en coreOptions, esto falla con el texto inglés.
+    expect(onRejection).toHaveBeenCalledWith(
+      "empty",
+      MESSAGES_ES.empty
+    );
   });
 
   it("speaks Spanish when the caller asks for it", () => {
