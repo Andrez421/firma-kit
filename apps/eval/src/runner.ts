@@ -1,0 +1,129 @@
+// Medición del verificador sobre un corpus etiquetado.
+//
+// Devuelve la matriz de confusión, las tasas que importan y las latencias, y
+// decide si el lote pasa. La decisión NO se toma aquí con números inventados: los
+// presupuestos vienen de `BUDGETS` y se aplican tal cual.
+
+import type { Bitmap, Verifier } from "@firma-kit/core";
+
+import type { Budgets, CorpusEntry } from "./manifest.js";
+
+export type EvalCase = CorpusEntry;
+
+export type EvalReport = {
+  total: number;
+  truePositives: number;
+  falseNegatives: number;
+  trueNegatives: number;
+  falsePositives: number;
+  /** Falsos rechazos sobre firmas: la métrica que no se negocia. */
+  falseRejectionRate: number;
+  /** Falsos aceptados sobre negativos. */
+  falseAcceptRate: number;
+  latencyMs: { p50: number; p95: number; max: number };
+  failures: Array<{ path: string; label: string; verdict: boolean }>;
+  passed: boolean;
+  reasons: string[];
+};
+
+export type RunEvalOptions = {
+  cases: EvalCase[];
+  verifier: Verifier;
+  loadImage: (ruta: string) => Promise<Bitmap>;
+  budgets: Budgets;
+  /** Reloj inyectable para que la latencia sea determinista en tests. */
+  now?: () => number;
+};
+
+function percentil(valores: number[], q: number): number {
+  if (valores.length === 0) return 0;
+  const ordenados = [...valores].sort((a, b) => a - b);
+  const indice = Math.min(ordenados.length - 1, Math.floor(q * ordenados.length));
+  return ordenados[indice]!;
+}
+
+export async function runEval(opciones: RunEvalOptions): Promise<EvalReport> {
+  const { cases, verifier, loadImage, budgets, now = () => Date.now() } = opciones;
+
+  if (cases.length === 0) {
+    throw new Error("no hay casos: un informe vacío no dice nada");
+  }
+  const positivos = cases.filter((c) => c.label === "signature").length;
+  const negativos = cases.length - positivos;
+  if (positivos === 0 || negativos === 0) {
+    // Con una sola clase no hay matriz: es el bloqueo conocido del proyecto.
+    throw new Error(
+      `el corpus necesita firmas y negativos (llegaron ${positivos} y ${negativos})`
+    );
+  }
+
+  let truePositives = 0;
+  let falseNegatives = 0;
+  let trueNegatives = 0;
+  let falsePositives = 0;
+  const latencias: number[] = [];
+  const failures: EvalReport["failures"] = [];
+
+  for (const caso of cases) {
+    const imagen = await loadImage(caso.path);
+    const inicio = now();
+    const veredicto = await verifier.verify(imagen);
+    latencias.push(now() - inicio);
+
+    const esFirma = caso.label === "signature";
+    if (esFirma && veredicto.isSignature) truePositives++;
+    else if (esFirma) {
+      falseNegatives++;
+      failures.push({ path: caso.path, label: caso.label, verdict: false });
+    } else if (veredicto.isSignature) {
+      falsePositives++;
+      failures.push({ path: caso.path, label: caso.label, verdict: true });
+    } else trueNegatives++;
+  }
+
+  const falseRejectionRate = falseNegatives / Math.max(1, positivos);
+  const falseAcceptRate = trueNegatives / Math.max(1, negativos);
+
+  const reasons: string[] = [];
+  if (falseRejectionRate > budgets.maxFalseRejectionRate) {
+    reasons.push(
+      `falsos rechazos ${(falseRejectionRate * 100).toFixed(1)} % > ${(budgets.maxFalseRejectionRate * 100).toFixed(0)} %`
+    );
+  }
+  if (falseAcceptRate < budgets.minFalseAcceptRate) {
+    reasons.push(
+      `falsos aceptados ${(falseAcceptRate * 100).toFixed(1)} % < ${(budgets.minFalseAcceptRate * 100).toFixed(0)} %`
+    );
+  }
+
+  return {
+    total: cases.length,
+    truePositives,
+    falseNegatives,
+    trueNegatives,
+    falsePositives,
+    falseRejectionRate,
+    falseAcceptRate,
+    latencyMs: {
+      p50: percentil(latencias, 0.5),
+      p95: percentil(latencias, 0.95),
+      max: Math.max(...latencias),
+    },
+    failures,
+    passed: reasons.length === 0,
+    reasons,
+  };
+}
+
+/** Informe legible para la consola y para archivar en `docs/eval/`. */
+export function formatReport(report: EvalReport): string {
+  const pct = (v: number) => `${(v * 100).toFixed(1)} %`;
+  return [
+    `casos: ${report.total}`,
+    `matriz: VP ${report.truePositives} · FN ${report.falseNegatives} · VN ${report.trueNegatives} · FP ${report.falsePositives}`,
+    `falsos rechazos: ${pct(report.falseRejectionRate)}`,
+    `falsos aceptados: ${pct(report.falseAcceptRate)}`,
+    `latencia: p50 ${report.latencyMs.p50} ms · p95 ${report.latencyMs.p95} ms · max ${report.latencyMs.max} ms`,
+    report.passed ? "RESULTADO: pasa" : `RESULTADO: falla — ${report.reasons.join("; ")}`,
+  ].join("\n");
+}
