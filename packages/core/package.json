@@ -13,10 +13,33 @@
       "default": "./dist/index.js"
     }
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "type-check": "tsc --noEmit",
     "lint": "echo \"(pendiente: eslint)\" && exit 0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Andrez421/firma-kit.git",
+    "directory": "packages/core"
+  },
+  "homepage": "https://github.com/Andrez421/firma-kit#readme",
+  "bugs": {
+    "url": "https://github.com/Andrez421/firma-kit/issues"
+  },
+  "keywords": [
+    "signature",
+    "firma",
+    "canvas",
+    "ink",
+    "png",
+    "typescript"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }

@@ -31,5 +31,25 @@
   },
   "engines": {
     "node": ">=22"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Andrez421/firma-kit.git",
+    "directory": "packages/verify"
+  },
+  "homepage": "https://github.com/Andrez421/firma-kit#readme",
+  "bugs": {
+    "url": "https://github.com/Andrez421/firma-kit/issues"
+  },
+  "keywords": [
+    "signature",
+    "firma",
+    "verification",
+    "onnx",
+    "transformers",
+    "siglip"
+  ],
+  "publishConfig": {
+    "access": "public"
   }
 }
