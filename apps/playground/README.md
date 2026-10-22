@@ -10,6 +10,24 @@ pnpm --filter @firma-kit/playground dev
 Consume el código fuente de `packages/core` y `packages/react` por alias de
 Vite, no `dist`, así que no hace falta compilar antes.
 
+## Verificación visual
+
+El modelo no cabe en el navegador (201 MB de ONNX), así que la verificación corre
+en un servicio local y el campo la consume por el puerto `verifier`:
+
+```bash
+# en otra terminal, con los pesos ya descargados
+FIRMA_KIT_MODULES_DIR=~/firma-kit-modules pnpm --filter @firma-kit/eval serve
+# escucha en http://127.0.0.1:8790 (GATE_PORT para cambiarlo)
+```
+
+El arnés sondea `/salud` al cargar y lo dice en pantalla: **conectado** (verde) o
+**sin servicio** (gris). Sin servicio el campo se comporta como antes — no
+verifica — para que el playground siga sirviendo aunque el modelo no esté.
+
+Con el servicio levantado, subir una cédula, una factura o la foto de un objeto se
+rechaza con «La imagen no parece una firma…», y una foto de una firma real pasa.
+
 ## Qué hay que mirar a ojo (pendiente en la fase 1)
 
 1. **Modo escribir**: el nombre `José Muñoz Peña` debe verse con tilde y con
