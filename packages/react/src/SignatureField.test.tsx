@@ -1,4 +1,4 @@
-import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { createRef } from "react";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
@@ -123,6 +123,49 @@ describe("<SignatureField />", () => {
         png: new Uint8Array([7, 7, 7]),
       })
     );
+  });
+
+  it("reports the signature to a controlled parent and reflects its value", async () => {
+    const onSignature = vi.fn();
+    const png = encoder();
+    const { rerender } = render(
+      <SignatureField
+        value={null}
+        name="Ana Ruiz"
+        onSignature={onSignature}
+        encoder={png}
+        measurer={measurer}
+        rasterizer={inkRasterizer}
+      />
+    );
+    fireEvent.click(screen.getByRole("tab", { name: "Type" }));
+    fireEvent.click(screen.getByRole("button", { name: "Use this signature" }));
+    await waitFor(() => expect(onSignature).toHaveBeenCalledTimes(1));
+
+    // En controlado el padre decide: hasta que no pase la firma en `value`, el
+    // componente no muestra el estado de "lista".
+    expect(screen.queryByText("Signature ready to save.")).toBeNull();
+    const firmada = onSignature.mock.calls[0]![0];
+    rerender(
+      <SignatureField
+        value={firmada}
+        name="Ana Ruiz"
+        onSignature={onSignature}
+        encoder={png}
+        measurer={measurer}
+        rasterizer={inkRasterizer}
+      />
+    );
+    expect(screen.getByText("Signature ready to save.")).toBeTruthy();
+  });
+
+  it("tells a controlled parent when the field is cleared", () => {
+    // Bug real: en modo controlado `clear` se callaba, así que el padre nunca
+    // podía enterarse de que la persona había limpiado el campo.
+    const onSignature = vi.fn();
+    render(<SignatureField value={null} onSignature={onSignature} />);
+    fireEvent.click(screen.getByRole("button", { name: "Clear" }));
+    expect(onSignature).toHaveBeenCalledWith(null);
   });
 
   it("asks for an image before confirming in upload mode", async () => {

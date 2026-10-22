@@ -251,10 +251,11 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       setPoints([]);
       setFile(null);
       setError(null);
-      if (value === undefined) {
-        setSignature(null);
-        onSignature?.(null);
-      }
+      // En controlado el estado interno no manda, pero el padre sí tiene que
+      // enterarse de que la persona limpió el campo: si no, nunca puede soltar
+      // su `value` y el componente queda imposible de reiniciar.
+      if (value === undefined) setSignature(null);
+      onSignature?.(null);
     }, [onSignature, value]);
 
     const confirm = useCallback(async () => {
