@@ -67,7 +67,7 @@
   gap: var(--signature-gap);
 }
 
-.signature__lienzo {
+.signature__canvas {
   background: var(--signature-surface);
   border: 1px dashed var(--signature-border);
   border-radius: var(--signature-radius);
@@ -76,12 +76,12 @@
   width: 100%;
 }
 
-.signature__vista-previa {
+.signature__preview {
   color: var(--signature-muted);
   margin: 0;
 }
 
-.signature__archivo {
+.signature__file {
   align-items: center;
   border: 1px dashed var(--signature-border);
   border-radius: var(--signature-radius);
@@ -93,11 +93,11 @@
   padding: 16px;
 }
 
-.signature__archivo input {
+.signature__file input {
   min-height: 44px;
 }
 
-.signature__acciones {
+.signature__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -115,7 +115,7 @@
   padding: 10px 16px;
 }
 
-.signature__button--principal {
+.signature__button--primary {
   background: var(--signature-focus);
   border-color: var(--signature-focus);
   color: #ffffff;
@@ -129,8 +129,8 @@
 
 .signature__tab:focus-visible,
 .signature__button:focus-visible,
-.signature__archivo input:focus-visible,
-.signature__lienzo:focus-visible {
+.signature__file input:focus-visible,
+.signature__canvas:focus-visible {
   outline: 3px solid var(--signature-focus);
   outline-offset: 2px;
 }
@@ -140,7 +140,7 @@
   margin: 0;
 }
 
-.signature__estado {
+.signature__status {
   color: var(--signature-muted);
   margin: 0;
   min-height: 1.25em;

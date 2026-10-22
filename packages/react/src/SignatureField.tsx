@@ -377,7 +377,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
           {mode === "draw" ? (
             <canvas
               ref={canvasRef}
-              className="signature__lienzo"
+              className="signature__canvas"
               width={CANVAS_SIZE.width}
               height={CANVAS_SIZE.height}
               aria-label={texts.canvas}
@@ -402,7 +402,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
           ) : null}
 
           {mode === "type" ? (
-            <p className="signature__vista-previa" aria-live="polite">
+            <p className="signature__preview" aria-live="polite">
               {name?.trim()
                 ? `${texts.typeHint}: ${name.trim()}`
                 : texts.typeEmpty}
@@ -410,7 +410,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
           ) : null}
 
           {mode === "upload" || mode === "camera" ? (
-            <label className="signature__archivo">
+            <label className="signature__file">
               <span>
                 {mode === "camera" ? texts.camera : texts.upload}
               </span>
@@ -426,13 +426,13 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
             </label>
           ) : null}
 
-          <div className="signature__acciones">
+          <div className="signature__actions">
             <button type="button" className="signature__button" onClick={clear}>
               {texts.clear}
             </button>
             <button
               type="button"
-              className="signature__button signature__button--principal"
+              className="signature__button signature__button--primary"
               onClick={() => void confirm()}
               disabled={busy}
             >
@@ -446,7 +446,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
             </p>
           ) : null}
 
-          <p className="signature__estado" aria-live="polite">
+          <p className="signature__status" aria-live="polite">
             {visibleSignature ? texts.ready : ""}
           </p>
         </div>
