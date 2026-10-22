@@ -44,6 +44,13 @@ block the person: verification is a safeguard, not a requirement to sign.
 />
 ```
 
+## Drawing performance
+
+The canvas does not repaint the whole sheet on every pointer move: while a stroke is
+in progress it draws only the new segment, and on release it runs one exact pass with
+the pure rasterizer. The exact pass is what you see when you stop drawing and what
+gets saved, so the approximation never reaches the signature.
+
 ## Validation
 
 Uploads and camera captures are checked **before** any decoding work:

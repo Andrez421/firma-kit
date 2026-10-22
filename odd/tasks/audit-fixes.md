@@ -4,7 +4,16 @@ Rama `fix/audit-fixes`. Objetivo: cerrar los hallazgos elegidos por el dueño �
 **P1, P3, P4 y S1–S5** — de `docs/AUDIT-PERFORMANCE.md` y `docs/AUDIT-SECURITY.md`.
 Quedan fuera, por decisión explícita: P2 (pipeline de tinta), S6–S8 (contrato HTTP
 completo, registro de peticiones, anclaje de acciones de CI).
-Documento de especificación: leer hasta `## Log`.
+Documento de especificación: leer hasta `## Estado
+
+- T1 hecho — `f8fc124` (555 líneas: reescritura de `serve.ts` más 12 tests del
+  contrato; una sola unidad, no se parte sin dejar el servicio a medias).
+- T2 hecho — `26c4df3`.
+- T3 hecho — `7c402fb`. Medido en Chromium: 300 `pointermove` → 2 rasterizados
+  completos.
+- T4 hecho — este documento y las dos auditorías.
+
+## Log`.
 
 ## Specs
 
@@ -45,6 +54,15 @@ Documento de especificación: leer hasta `## Log`.
   `perf(react): paint the stroke incrementally instead of the whole canvas`.
 - **T4** — READMEs y auditorías actualizadas con lo arreglado. Commit:
   `docs: record what the audits closed and what stays open`.
+
+## Estado
+
+- T1 hecho — `f8fc124` (555 líneas: reescritura de `serve.ts` más 12 tests del
+  contrato; una sola unidad, no se parte sin dejar el servicio a medias).
+- T2 hecho — `26c4df3`.
+- T3 hecho — `7c402fb`. Medido en Chromium: 300 `pointermove` → 2 rasterizados
+  completos.
+- T4 hecho — este documento y las dos auditorías.
 
 ## Log
 

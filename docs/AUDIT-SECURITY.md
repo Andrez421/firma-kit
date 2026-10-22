@@ -113,6 +113,30 @@ Dependabot para actualizarlas.
 - **El componente no bloquea a la persona** si el verificador falla: es la decisión
   correcta de producto (verificación como salvaguarda, no como requisito).
 
+## Estado (22 de octubre de 2026)
+
+Cerrados en la rama `fix/audit-fixes`, con tests del contrato HTTP:
+
+- **S1** — token compartido en `x-gate-token` (comparado por hash), CORS limitado a
+  `GATE_ORIGINS` y preflight atendido. Fuera de loopback, arrancar sin token es un
+  error, no un aviso.
+- **S2** — cubo de fichas por IP (`429` + `Retry-After`) y una petición en vuelo
+  (`503` + `Retry-After`), con el mapa del limitador acotado.
+- **S3** — `headersTimeout`, `requestTimeout` y `keepAliveTimeout`, con
+  `connectionsCheckingInterval` derivado del más corto: sin él, Node solo revisa los
+  plazos cada 30 s y un presupuesto de 300 ms no se notaba nunca.
+- **S4** — el `413` responde `Connection: close` y drena; un pool *keep-alive* ya no
+  muere con `ECONNRESET` en la petición siguiente.
+- **S5** — `AbortSignal.timeout(8 s)` por intento y un reintento con jitter solo ante
+  fallo de red o `503`, nunca ante `401`, `403`, `413` o `429`.
+
+Siguen abiertos:
+
+- **S6** — contrato HTTP completo (405 con `Allow`).
+- **S7** — registro de peticiones y cabeceras de defensa más allá de `nosniff` y
+  `no-store`.
+- **S8** — acciones de CI ancladas a SHA.
+
 ## Prioridad propuesta
 
 1. **S1 + S2**: token y origen permitido, y techo de concurrencia. Van juntos

@@ -91,6 +91,23 @@ en vez de 9.8 MB).
 - `useMemo` en `points`, `coreOptions`, `typeCanvas` y los puertos por defecto evita
   trabajo repetido en cada render.
 
+## Estado (22 de octubre de 2026)
+
+Cerrados en la rama `fix/audit-fixes`:
+
+- **P1** — el trazo ya no re-rasteriza el lienzo completo en cada movimiento. Con un
+  fotograma por evento, 300 `pointermove` provocan **2** rasterizados completos
+  (inicio y fin del trazo) en vez de 300, y 300 segmentos baratos en medio. La
+  pasada exacta del final conserva el rasterizador puro como fuente de verdad.
+- **P3** — el gate responde `503` con `Retry-After` cuando ya hay una petición en
+  vuelo, en vez de encolar.
+- **P4** — el cuerpo se reserva una vez cuando `content-length` es creíble; el
+  camino de trozos queda para clientes *chunked* o que mienten sobre el tamaño.
+
+Sigue abierto:
+
+- **P2** — el pipeline de tinta. Necesita banco de paridad antes de tocarlo.
+
 ## Prioridad propuesta
 
 1. **P1**, porque es lo que la persona siente al firmar.
