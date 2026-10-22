@@ -44,8 +44,8 @@ y documentado para que un tercero lo use sin leer el código.
 | 0 | Andamiaje, docs, contrato de tipos, pipeline de tinta portado + tests | **hecho** |
 | 1 | `core`: `Bitmap` estructural, `draw`, `type` (fuentes self-hosted), `upload`/`camera`, `sign()` | **hecho** |
 | 2 | `react`: `<SignatureField />`, estilos con CSS variables, a11y, tests de componente | **hecho** (publicación aún diferida por el dueño) |
-| 3 | `verify`: MobileCLIP-S0 int8 (gate) + SmolVLM-256M (segunda opinión), umbrales y evals | en curso: verificador, umbrales, gestión de modelos y arnés hechos; calibración bloqueada por negativos reales |
-| 4 | `apps/demo` (Next.js), publicación en npm, adaptadores (Supabase/Prisma/S3), i18n | |
+| 3 | `verify`: gate imagen-texto + arnés visual, umbrales y evals | **hecho**: SigLIP base es el gate (4/4 firmas reales en el arnés); la segunda opinión VLM queda aparcada como mejora medida |
+| 4 | `apps/demo` (Next.js), publicación en npm, adaptadores (Supabase/Prisma/S3), i18n | siguiente |
 
 ## Métricas de éxito
 

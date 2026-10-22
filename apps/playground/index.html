@@ -3,10 +3,52 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>firma-kit · playground</title>
+    <title>signature-kit · playground</title>
     <style>
-      :root { color-scheme: light dark; }
-      body { margin: 0; }
+      /* El banco de pruebas viste el mismo mundo que el componente: un escritorio
+         neutro con la hoja encima. Nada de bordes de navegador. */
+      :root {
+        color-scheme: light dark;
+        --desk: #eeece7;
+        --ink: #14140f;
+        --muted: #5f5c55;
+        --rule: #d8d4cb;
+        --paper: #fbfbf9;
+        --accent: #c8372d;
+        --ui: system-ui, -apple-system, "Segoe UI", sans-serif;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --desk: #0d0d0b;
+          --ink: #f5f3ee;
+          --muted: #a8a39a;
+          --rule: #302c26;
+          --paper: #14140f;
+          --accent: #e4584c;
+        }
+      }
+      body {
+        background: var(--desk);
+        color: var(--ink);
+        font-family: var(--ui);
+        font-variant-numeric: tabular-nums;
+        margin: 0;
+      }
+      ::selection {
+        background: var(--accent);
+        color: var(--paper);
+      }
+      input,
+      select {
+        accent-color: var(--accent);
+        caret-color: var(--accent);
+        font: inherit;
+      }
+      input:focus-visible,
+      select:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
+      }
     </style>
   </head>
   <body>

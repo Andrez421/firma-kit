@@ -1,112 +1,145 @@
-/* Estilos de <FirmaField />.
+/* Estilos de <SignatureField /> — mundo: «la impresión».
  *
- * Variables propias, no Tailwind: el paquete se tiene que ver bien dentro de
- * cualquier proyecto, con o sin framework de utilidades. Sobrescribir un token
- * en el contenedor es todo lo que hace falta para integrarlo.
+ * Firmar no es trazar una línea: es estampar una marca que compromete. De ahí el
+ * papel blanco, la tinta negra, un único bermellón y el gesto de presionar. Los
+ * nombres de clase y los tokens son API pública: no se renombran.
  *
  * Todo objetivo táctil mide al menos 44px: es un dedo sobre un móvil, no un
  * cursor sobre un escritorio. */
 
 .signature {
-  --signature-color: #111827;
-  --signature-muted: #6b7280;
-  --signature-surface: #ffffff;
-  --signature-border: #d1d5db;
-  --signature-focus: #2563eb;
-  --signature-error: #b91c1c;
-  --signature-radius: 10px;
-  --signature-gap: 12px;
+  /* Papel, tinta y un solo acento. */
+  --signature-color: #14140f;
+  --signature-muted: #5f5c55;
+  --signature-surface: #fbfbf9;
+  --signature-border: #e4e1da;
+  --signature-rule: #cfcac0;
+  --signature-focus: #c8372d;
+  --signature-error: #8e1f17;
+  --signature-radius: 2px;
+  --signature-gap: 16px;
   --signature-font: system-ui, -apple-system, "Segoe UI", sans-serif;
-  /* Alto del lienzo de dibujar: el tamaño del módulo, no una constante escondida. */
   --signature-canvas-height: 200px;
+  /* Retícula de construcción bajo el lienzo: la hoja donde se firma. */
+  --signature-grid: rgba(20, 20, 15, 0.11);
+  /* Un solo momento de movimiento: el sello que presiona. */
+  --signature-press: 120ms cubic-bezier(0.2, 0.8, 0.2, 1);
 
-  /* El componente pinta SU superficie y su color de texto juntos. Si solo
-     cambiara el color del texto, en un esquema oscuro dentro de una página
-     clara el resultado es texto casi blanco sobre fondo blanco: el contraste es
-     responsabilidad del componente, no de la página que lo hospeda. */
+  /* El componente pinta su propia hoja: el contraste no depende de la página. */
   background: var(--signature-surface);
+  border: 1px solid var(--signature-rule);
   border-radius: var(--signature-radius);
-  /* Los controles nativos (input de archivo, select) siguen este valor: sin él,
-     en oscuro se dibujan con el chrome claro del navegador. */
-  color-scheme: light;
   color: var(--signature-color);
   display: flex;
   flex-direction: column;
   font-family: var(--signature-font);
+  /* Cifras alineadas: las medidas del pie de la impresión se leen en columna. */
+  font-variant-numeric: tabular-nums;
   gap: var(--signature-gap);
   max-width: 100%;
-  padding: var(--signature-gap);
+  padding: calc(var(--signature-gap) * 1.25);
+  /* La hoja se apoya en el escritorio: desplazamiento real y desenfoque suave,
+     nunca un halo. */
+  box-shadow:
+    0 1px 1px rgba(20, 20, 15, 0.05),
+    0 10px 24px -18px rgba(20, 20, 15, 0.35);
 }
 
-/* Oscuro por preferencia del sistema, salvo que el consumidor pida claro. */
+/* Las superficies que no dibujamos también visten el mundo. */
+.signature ::selection {
+  background: var(--signature-focus);
+  color: var(--signature-surface);
+}
+
+.signature input,
+.signature select,
+.signature canvas {
+  caret-color: var(--signature-focus);
+}
+
+/* Oscuro: papel de sumi. El bermellón sube un punto para mantener contraste. */
 @media (prefers-color-scheme: dark) {
   .signature:not([data-theme="light"]) {
     color-scheme: dark;
-    --signature-color: #f9fafb;
-    --signature-muted: #9ca3af;
-    --signature-surface: #111827;
-    --signature-border: #374151;
-    --signature-focus: #60a5fa;
-    --signature-error: #fca5a5;
+    --signature-color: #f5f3ee;
+    --signature-muted: #a8a39a;
+    --signature-surface: #14140f;
+    --signature-border: #2e2a24;
+    --signature-rule: #3d3830;
+    --signature-focus: #e4584c;
+    --signature-error: #f0a09a;
+    --signature-grid: rgba(245, 243, 238, 0.1);
   }
 }
 
-/* Y oscuro explícito, sin depender del sistema operativo. */
 .signature[data-theme="dark"] {
   color-scheme: dark;
-  --signature-color: #f9fafb;
-  --signature-muted: #9ca3af;
-  --signature-surface: #111827;
-  --signature-border: #374151;
-  --signature-focus: #60a5fa;
-  --signature-error: #fca5a5;
+  --signature-color: #f5f3ee;
+  --signature-muted: #a8a39a;
+  --signature-surface: #14140f;
+  --signature-border: #2e2a24;
+  --signature-rule: #3d3830;
+  --signature-focus: #e4584c;
+  --signature-error: #f0a09a;
+  --signature-grid: rgba(245, 243, 238, 0.1);
 }
 
-/* Tamaños del campo. Todos dejan los objetivos táctiles en 44px o más: el
-   tamaño cambia el aire y el lienzo, nunca la accesibilidad. */
+/* Tamaños: cambian el lienzo y el aire, nunca los 44px de los objetivos. */
 .signature[data-size="sm"] {
-  --signature-gap: 8px;
+  --signature-gap: 10px;
   --signature-canvas-height: 140px;
-  --signature-radius: 8px;
 }
 
 .signature[data-size="lg"] {
-  --signature-gap: 16px;
+  --signature-gap: 22px;
   --signature-canvas-height: 280px;
 }
 
-.signature[data-size="sm"] .signature__tab,
-.signature[data-size="sm"] .signature__button {
-  padding: 8px 12px;
-}
-
-.signature[data-size="lg"] .signature__tab,
-.signature[data-size="lg"] .signature__button {
-  padding: 12px 20px;
-}
-
+/* Índice de pestañas: una línea rayada con la marca del sello en la activa. */
 .signature__tabs {
+  border-bottom: 1px solid var(--signature-border);
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 0;
 }
 
 .signature__tab {
-  background: transparent;
-  border: 1px solid var(--signature-border);
-  border-radius: var(--signature-radius);
-  color: inherit;
+  align-items: center;
+  background: none;
+  border: 0;
+  border-bottom: 2px solid transparent;
+  color: var(--signature-muted);
   cursor: pointer;
+  display: inline-flex;
   font: inherit;
+  gap: 8px;
+  margin-right: 22px;
   min-height: 44px;
-  min-width: 44px;
-  padding: 10px 14px;
+  padding: 10px 0 9px;
+}
+
+/* La marca activa: un bloque bermellón, no una píldora. Las inactivas no llevan
+   marca, para no parecer casillas deshabilitadas. */
+.signature__tab::before {
+  content: "";
+  display: none;
+  height: 8px;
+  width: 8px;
+}
+
+.signature__tab:hover {
+  color: var(--signature-color);
 }
 
 .signature__tab--active {
-  border-color: var(--signature-focus);
-  box-shadow: inset 0 -2px 0 var(--signature-focus);
+  border-bottom-color: var(--signature-focus);
+  color: var(--signature-color);
   font-weight: 600;
+}
+
+.signature__tab--active::before {
+  background: var(--signature-focus);
+  display: block;
 }
 
 .signature__panel {
@@ -119,9 +152,30 @@
   position: relative;
 }
 
-/* La guía se centra sobre el lienzo y se va en cuanto hay un trazo. */
+/* El lienzo es una hoja con retícula de construcción tenue. */
+.signature__canvas {
+  background-color: var(--signature-surface);
+  background-image:
+    repeating-linear-gradient(
+      to right,
+      var(--signature-grid) 0 1px,
+      transparent 1px 20px
+    ),
+    repeating-linear-gradient(
+      to bottom,
+      var(--signature-grid) 0 1px,
+      transparent 1px 20px
+    );
+  border: 1px solid var(--signature-border);
+  border-radius: var(--signature-radius);
+  height: var(--signature-canvas-height);
+  touch-action: none;
+  width: 100%;
+}
+
 .signature__hint {
   color: var(--signature-muted);
+  font-size: 0.95rem;
   inset-inline: 0;
   margin: 0;
   pointer-events: none;
@@ -131,122 +185,152 @@
   transform: translateY(-50%);
 }
 
-.signature__canvas {
-  background: var(--signature-surface);
-  border: 1px dashed var(--signature-border);
-  border-radius: var(--signature-radius);
-  height: var(--signature-canvas-height);
-  touch-action: none;
-  width: 100%;
-}
-
+/* Cursivas: muestras sobre hairline; la activa se marca con el bloque. */
 .signature__font-options {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
-/* Cada opción se dibuja con su propia cursiva: elegir a ciegas un nombre de
-   fuente no dice nada. */
 .signature__font {
   align-items: center;
   border: 1px solid var(--signature-border);
   border-radius: var(--signature-radius);
   cursor: pointer;
   display: inline-flex;
-  font-size: 1.6rem;
-  gap: 8px;
+  font-size: 1.5rem;
+  gap: 10px;
   min-height: 44px;
   padding: 8px 14px;
 }
 
+.signature__font:hover {
+  border-color: var(--signature-rule);
+}
+
 .signature__font--active {
   border-color: var(--signature-focus);
-  box-shadow: inset 0 -2px 0 var(--signature-focus);
 }
 
 .signature__preview {
   color: var(--signature-muted);
+  font-size: 0.95rem;
   margin: 0;
 }
 
+/* Subir o fotografiar: una zona de depósito con regla discontinua. */
 .signature__file {
   align-items: center;
-  border: 1px dashed var(--signature-border);
+  border: 1px dashed var(--signature-rule);
   border-radius: var(--signature-radius);
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
   justify-content: center;
-  min-height: 96px;
-  padding: 16px;
+  min-height: 116px;
+  padding: 18px;
 }
 
 .signature__file input {
+  font: inherit;
   min-height: 44px;
 }
 
 .signature__actions {
+  align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 10px;
 }
 
 .signature__button {
-  background: transparent;
-  border: 1px solid var(--signature-border);
+  background: none;
+  border: 1px solid var(--signature-rule);
   border-radius: var(--signature-radius);
-  color: inherit;
+  color: var(--signature-color);
   cursor: pointer;
   font: inherit;
   min-height: 44px;
   min-width: 44px;
-  padding: 10px 16px;
+  padding: 11px 16px;
+  transition:
+    border-color var(--signature-press),
+    transform var(--signature-press);
 }
 
+.signature__button:hover {
+  border-color: var(--signature-color);
+}
+
+/* El único bloque relleno de la interfaz: el sello que compromete. */
 .signature__button--primary {
   background: var(--signature-focus);
   border-color: var(--signature-focus);
-  color: #ffffff;
+  color: var(--signature-surface);
   font-weight: 600;
+  padding-inline: 22px;
+}
+
+.signature__button--primary:hover {
+  border-color: var(--signature-color);
+}
+
+.signature__button--primary:active {
+  transform: scale(0.98);
 }
 
 .signature__button[disabled] {
   cursor: progress;
-  opacity: 0.7;
+  opacity: 0.55;
+  transform: none;
 }
 
 .signature__tab:focus-visible,
 .signature__button:focus-visible,
 .signature__file input:focus-visible,
-.signature__canvas:focus-visible {
-  outline: 3px solid var(--signature-focus);
+.signature__canvas:focus-visible,
+.signature__font:focus-within {
+  outline: 2px solid var(--signature-focus);
   outline-offset: 2px;
-}
-
-.signature__error {
-  color: var(--signature-error);
-  margin: 0;
 }
 
 .signature__result {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 8px;
 }
 
-/* La firma se muestra como se va a guardar: tinta sobre blanco, con su tamaño
-   real. El borde ayuda a ver el recorte cuando el papel también es blanco. */
+/* La impresión: el PNG enmarcado, con su pie grabado debajo. */
 .signature__result-image {
   background: #ffffff;
   border: 1px solid var(--signature-border);
-  border-radius: calc(var(--signature-radius) / 2);
+  border-radius: var(--signature-radius);
   max-width: 100%;
   width: min(320px, 100%);
 }
 
+.signature__error {
+  color: var(--signature-error);
+  display: flex;
+  font-size: 0.95rem;
+  gap: 8px;
+  margin: 0;
+}
+
+/* Marca del error: un bloque, nunca un emoji ni un glifo suelto. */
+.signature__error::before {
+  background: var(--signature-error);
+  content: "";
+  flex: none;
+  height: 8px;
+  margin-top: 0.45em;
+  width: 8px;
+}
+
 .signature__status {
   color: var(--signature-muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.01em;
   margin: 0;
-  min-height: 1.25em;
+  min-height: 1.2em;
 }

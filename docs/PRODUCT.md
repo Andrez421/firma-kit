@@ -43,8 +43,8 @@ without reading the code.
 | 0 | Scaffolding, docs, type contract, ported ink pipeline + tests | **done** |
 | 1 | `core`: structural `Bitmap`, `draw`, `type` (self-hosted fonts), `upload`/`camera`, `sign()` | **done** |
 | 2 | `react`: `<SignatureField />`, CSS-variable styles, a11y, component tests | **done** (publication still deferred by the owner) |
-| 3 | `verify`: MobileCLIP-S0 int8 (gate) + SmolVLM-256M (second opinion), thresholds and evals | in progress: verifier, thresholds, model management and eval harness done; calibration blocked on real negatives |
-| 4 | `apps/demo` (Next.js), npm publication, adapters (Supabase/Prisma/S3), i18n | |
+| 3 | `verify`: image-text gate + visual harness, thresholds and evals | **done**: SigLIP base is the gate (4/4 real signatures on the harness); the VLM second opinion is parked as a measured improvement |
+| 4 | `apps/demo` (Next.js), npm publication, adapters (Supabase/Prisma/S3), i18n | next |
 
 ## Success metrics
 
