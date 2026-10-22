@@ -96,3 +96,50 @@ then can `gateAccept` / `gateReject` in `src/thresholds.ts` be set with evidence
 
 Until then the thresholds stay at their provisional values, and the report keeps
 printing how many positives would be needed to claim a 2 % ceiling (3/N: 150).
+
+## Model comparison, and SigLIP as tier 1
+
+Three image-text models were measured on the same licensed set: 4 real signature
+photos, 18 generated signatures and 47 negatives.
+
+| Model | Real signatures | Negative set | Latency |
+| --- | --- | --- | --- |
+| MobileCLIP-S0 int8 | **0 / 4** | 47/47 rejected | ~0.5 s |
+| MobileCLIP-S1 int8 | 3 / 4 by argmax | 3/12 rejected | ~0.6 s |
+| **SigLIP base (q8)** | **3 / 4** | **38/47 rejected** | 1.39 s |
+
+MobileCLIP-S1 looked usable by argmax and is not: on the whole set the signatures
+score 0.24-0.33 while negatives reach 0.55, so **no threshold separates them** — the
+ordering is inverted. SigLIP does separate them.
+
+### The ranking carries the signal, not the probability
+
+With SigLIP, a real signature that it recognises perfectly still scores only
+0.13-0.33 as an absolute probability. A threshold on the absolute value therefore
+rejects everything: the first harness run with SigLIP reported 22 false rejections
+out of 22. The gate now returns a **relative** score (`P(signature) / max(P)`), which
+is 1 when the signature is the winning class. Thresholds moved to
+`THRESHOLDS_VERSION = "2"` (`gateAccept 0.99`, `gateReject 0.5`) with that scale in
+mind. This is the kind of thing that only shows up by running the harness instead of
+a probe.
+
+### Final numbers through the harness
+
+69 licensed images — 22 positives (4 real, 18 generated) and 47 negatives:
+
+| Metric | Value |
+| --- | --- |
+| Confusion matrix | VP 4 · FN 18 · VN 33 · FP 14 |
+| Real signatures accepted | **4 / 4** |
+| False rejections (all positives) | 81.8 % (95 % CI 61.5–92.7 %) |
+| Negatives rejected | 70.2 % (95 % CI 56.0–81.3 %) |
+| Negatives accepted by mistake | **29.8 %** |
+| Latency | p50 1 235 ms · p95 1 555 ms |
+
+The 81.8 % is dominated by the 18 vector drawings, which a photo classifier is not
+expected to call signatures; the number that matters is **4 of 4 real photos**.
+
+The 29.8 % of negatives accepted comes from the ambiguous band: a score between 0.5
+and 0.99 means "the signature is close but not the winner", and with no second
+opinion the design accepts rather than rejects (false rejections are the metric that
+cannot move). That band is exactly where the VLM belongs.

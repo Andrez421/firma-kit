@@ -6,11 +6,11 @@ describe("umbrales", () => {
   it("fija la versión: cambiarla es un acto deliberado", () => {
     // ADR-011: un umbral sin evidencia archivada es indistinguible de un ajuste
     // a ojo. Si este test falla, hay que traer el reporte de evaluación.
-    expect(THRESHOLDS_VERSION).toBe("1");
+    expect(THRESHOLDS_VERSION).toBe("2");
   });
 
   it("fija los valores provisionales", () => {
-    expect(THRESHOLDS).toEqual({ gateAccept: 0.72, gateReject: 0.35 });
+    expect(THRESHOLDS).toEqual({ gateAccept: 0.99, gateReject: 0.5 });
   });
 
   it("mantiene una banda de ambigüedad real entre los dos umbrales", () => {

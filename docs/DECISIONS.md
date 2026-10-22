@@ -188,3 +188,24 @@ nadie: no había nada publicado. A partir de la publicación, el contrato es
 estable y los cambios de nombre son breaking. Queda pendiente traducir al inglés
 los documentos internos de `docs/` (producto, arquitectura, relevamiento), que
 hoy siguen en español.
+
+## ADR-003 (enmienda) — el nivel 1 es SigLIP, y su puntuación es relativa
+
+**Contexto.** La redacción original proponía MobileCLIP-S0 int8 (~90 MB, ~50 ms) como
+gate barato. Medido sobre cuatro fotos reales de firmas manuscritas y 47 negativas,
+MobileCLIP-S0 **no reconoce ninguna** (0/4) con cuatro juegos de prompts distintos;
+su variante S1 acierta 3/4 pero ordena las firmas por debajo de los documentos, así
+que ningún umbral separa las clases.
+
+**Decisión.** El nivel 1 es **SigLIP base** (ONNX q8 fusionado, 201 MB verificado por
+SHA-256). Reconoce 4 de 4 firmas reales por el arnés y rechaza el 70 % de las
+negativas, a ~1,2 s por imagen. El gate devuelve una puntuación **relativa**
+(`P(firma) / max(P)`), no una probabilidad absoluta: las probabilidades de un
+zero-shot no están calibradas y una firma reconocida puntúa 0,13-0,33.
+
+**Consecuencias.** El «gate barato de 50 ms» no existe: subir/cámara pasan a ~1,2 s
+p50, aceptable para una firma pero no para un flujo de muchas imágenes. La banda
+ambigua (0,5-0,99) acepta hoy, y por eso el 29,8 % de las negativas pasa; el VLM es
+la segunda opinión que debe decidir ahí. Los umbrales siguen provisionales: con 4
+positivos reales no se puede afirmar la tasa de falsos rechazos, y con cero errores
+la cota de 3/N pide 150.

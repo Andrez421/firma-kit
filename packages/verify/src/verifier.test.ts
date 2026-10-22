@@ -35,10 +35,10 @@ describe("createTwoTierVerifier", () => {
   it("sin segunda opinión, un resultado ambiguo se acepta y no se rechaza", async () => {
     // La métrica que no se negocia son los falsos rechazos: un "quizá" deja
     // firmar a la persona y queda registrado con confianza baja.
-    const verificador = createTwoTierVerifier({ gate: gate(0.5) });
+    const verificador = createTwoTierVerifier({ gate: gate(0.75) });
     await expect(verificador.verify(imagen)).resolves.toEqual({
       isSignature: true,
-      confidence: 0.5,
+      confidence: 0.75,
       tier: 1,
     });
   });
@@ -46,7 +46,7 @@ describe("createTwoTierVerifier", () => {
   it("con segunda opinión, un resultado ambiguo se decide en el nivel 2", async () => {
     const decide = vi.fn(async () => ({ isSignature: false, confidence: 0.9 }));
     const segunda: SecondOpinion = { decide };
-    const verificador = createTwoTierVerifier({ gate: gate(0.5), secondOpinion: segunda });
+    const verificador = createTwoTierVerifier({ gate: gate(0.75), secondOpinion: segunda });
     await expect(verificador.verify(imagen)).resolves.toEqual({
       isSignature: false,
       confidence: 0.9,
@@ -58,7 +58,7 @@ describe("createTwoTierVerifier", () => {
   it("no invoca la segunda opinión cuando el gate ya decidió", async () => {
     const decide = vi.fn(async () => ({ isSignature: true, confidence: 1 }));
     const verificador = createTwoTierVerifier({
-      gate: gate(0.95),
+      gate: gate(0.999),
       secondOpinion: { decide },
     });
     await verificador.verify(imagen);
@@ -81,6 +81,6 @@ describe("createTwoTierVerifier", () => {
     });
     const veredicto = await verificador.verify(imagen);
     expect(veredicto.isSignature).toBe(true);
-    expect(THRESHOLDS.gateAccept).toBe(0.72);
+    expect(THRESHOLDS.gateAccept).toBe(0.99);
   });
 });

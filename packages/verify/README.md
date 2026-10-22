@@ -38,12 +38,20 @@ silently replaced.
 
 | Tier | Model | Licence | Role |
 | --- | --- | --- | --- |
-| 1 | MobileCLIP-S0 int8 (≈55 MB of ONNX) | apple-amlr (not redistributable) | cheap gate, tens of ms |
-| 2 | SmolVLM-256M Q8_0 + mmproj (≈270 MB) | Apache-2.0 | second opinion only when ambiguous |
+| 1 | **SigLIP base** (fused ONNX q8, 201 MB) | Apache-2.0 | gate: works, ~1.2 s |
+| 2 | SmolVLM-256M Q8_0 + mmproj (≈270 MB) | Apache-2.0 | second opinion for the ambiguous band |
+
+Tier 1 is SigLIP and not MobileCLIP: measured on real signature photos, MobileCLIP-S0
+recognised none and S1 ordered signatures below documents. See
+`docs/eval/gate-smoke.md` and the ADR-003 amendment.
 
 Tier 2 uses `Q8_0` because the official `ggml-org` repository does not publish a
 `Q4_K_M` quantisation; only `Q8_0` and `f16` exist. The official repository is
 preferred over a third-party mirror.
+
+The gate's score is **relative** (`P(signature) / max(P)`), 1 when the signature is
+the winning class: zero-shot probabilities are not calibrated, and a real signature
+SigLIP recognises can score 0.13 as an absolute value.
 
 ## Thresholds
 
