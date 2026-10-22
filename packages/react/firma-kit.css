@@ -153,6 +153,24 @@
 }
 
 /* El lienzo es una hoja con retícula de construcción tenue. */
+/* Pantalla completa: el lienzo se lleva toda la ventana. No usa la Fullscreen
+   API porque iOS no la permite fuera de vídeo. */
+.signature__canvas-wrap--expanded {
+  background: var(--signature-surface);
+  display: flex;
+  flex-direction: column;
+  gap: var(--signature-gap);
+  inset: 0;
+  padding: 20px;
+  position: fixed;
+  z-index: 60;
+}
+
+.signature__canvas-wrap--expanded .signature__canvas {
+  flex: 1;
+  height: auto;
+}
+
 .signature__canvas {
   background-color: var(--signature-surface);
   background-image:
@@ -171,6 +189,21 @@
   height: var(--signature-canvas-height);
   touch-action: none;
   width: 100%;
+}
+
+/* La línea donde se firma: discontinua y discreta, como el renglón de un
+   formulario. */
+.signature__baseline {
+  border-bottom: 1px dashed var(--signature-rule);
+  bottom: 22%;
+  color: var(--signature-muted);
+  font-size: 0.75rem;
+  left: 6%;
+  letter-spacing: 0.04em;
+  padding-bottom: 4px;
+  pointer-events: none;
+  position: absolute;
+  right: 6%;
 }
 
 .signature__hint {
@@ -308,6 +341,12 @@
   transform: scale(0.98);
 }
 
+/* Herramienta activa: acento en el borde. El único relleno sigue siendo el sello. */
+.signature__button--active {
+  border-color: var(--signature-focus);
+  box-shadow: inset 0 0 0 1px var(--signature-focus);
+}
+
 .signature__button[disabled] {
   cursor: progress;
   opacity: 0.55;
@@ -330,6 +369,60 @@
 }
 
 /* La impresión: el PNG enmarcado, con su pie grabado debajo. */
+/* Esquinas de registro: las cruces de imprenta, solo en dos esquinas
+   diagonales, que es como se marcan las hojas. */
+.signature__result-frame {
+  display: inline-block;
+  animation: signature-impresion 260ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+  position: relative;
+}
+
+.signature__result-frame::before,
+.signature__result-frame::after {
+  border-color: var(--signature-rule);
+  border-style: solid;
+  content: "";
+  height: 12px;
+  position: absolute;
+  width: 12px;
+}
+
+.signature__result-frame::before {
+  border-width: 1px 0 0 1px;
+  left: -4px;
+  top: -4px;
+}
+
+.signature__result-frame::after {
+  border-width: 0 1px 1px 0;
+  bottom: -4px;
+  right: -4px;
+}
+
+/* La marca de la impresión: aparece de arriba a abajo, como si se posara. */
+@keyframes signature-impresion {
+  from {
+    clip-path: inset(0 0 100% 0);
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .signature__result-frame {
+    animation: none;
+  }
+
+  .signature__button--primary:active {
+    transform: none;
+  }
+}
+
 .signature__result-image {
   background: #ffffff;
   border: 1px solid var(--signature-border);
