@@ -19,6 +19,43 @@ const GATE_URL =
   import.meta.env["VITE_GATE_URL"] ??
   `${window.location.protocol}//${window.location.hostname}:8790`;
 
+// Token compartido del servicio (`GATE_TOKEN` al arrancarlo). Va en el bundle de
+// desarrollo a propósito: esto es un arnés, no un cliente publicado.
+const GATE_TOKEN = import.meta.env["VITE_GATE_TOKEN"] ?? "";
+
+// Presupuesto por intento. El gate tarda ~1.2 s por imagen en local; ocho segundos
+// dejan aire para un móvil por la tailnet sin dejar la interfaz colgada.
+const GATE_TIMEOUT_MS = 8_000;
+
+type FalloDelGate = Error & {
+  /** Un 503 es "ocupado", no "roto": se puede reintentar. */
+  reintentar?: boolean;
+  esperaMs?: number;
+};
+
+async function pedirVeredicto(imagen: Bitmap): Promise<Verdict> {
+  const res = await fetch(
+    `${GATE_URL}/verificar?w=${imagen.width}&h=${imagen.height}`,
+    {
+      method: "POST",
+      // Copia con su propio ArrayBuffer: `Uint8Array<ArrayBufferLike>` no es un
+      // `BodyInit` válido en TypeScript.
+      body: new Uint8Array(imagen.data),
+      ...(GATE_TOKEN ? { headers: { "x-gate-token": GATE_TOKEN } } : {}),
+      // Sin esto, un gate colgado deja la interfaz esperando para siempre.
+      signal: AbortSignal.timeout(GATE_TIMEOUT_MS),
+    }
+  );
+  if (!res.ok) {
+    const fallo = new Error(`el gate respondió ${res.status}`) as FalloDelGate;
+    fallo.reintentar = res.status === 503;
+    const indicado = Number(res.headers.get("retry-after") ?? "1");
+    fallo.esperaMs = Math.min(2_000, (Number.isFinite(indicado) ? indicado : 1) * 1_000);
+    throw fallo;
+  }
+  return (await res.json()) as Verdict;
+}
+
 // Direcciones de color para probar el contrato de personalización sin escribir
 // una hoja de estilos: papel/tinta y un acento distinto por preset.
 // Un preset solo mueve el acento y el radio del borde. La tinta y el papel los
@@ -40,16 +77,27 @@ export function App() {
   const [signature, setSignature] = useState<Signature | null>(null);
   const [rejection, setRejection] = useState<string | null>(null);
   const [gate, setGate] = useState<"comprobando" | "conectado" | "sin servicio">("comprobando");
+  // Por qué no se está validando: «sin servicio» a secas deja a la persona
+  // adivinando entre un servicio apagado, un token que no coincide o un timeout.
+  const [gateNote, setGateNote] = useState<string | null>(null);
   const tokens = PRESETS[preset];
 
   // Sonda de salud: si el servicio no está, el campo se comporta como antes (sin
   // verificación) y el arnés lo dice en pantalla.
   useEffect(() => {
     let vigente = true;
-    fetch(`${GATE_URL}/salud`)
+    fetch(`${GATE_URL}/salud`, { signal: AbortSignal.timeout(2_000) })
       .then((res) => res.ok)
-      .then((ok) => vigente && setGate(ok ? "conectado" : "sin servicio"))
-      .catch(() => vigente && setGate("sin servicio"));
+      .then((ok) => {
+        if (!vigente) return;
+        setGate(ok ? "conectado" : "sin servicio");
+        if (!ok) setGateNote("el servicio del gate no responde");
+      })
+      .catch(() => {
+        if (!vigente) return;
+        setGate("sin servicio");
+        setGateNote("el servicio del gate no responde");
+      });
     return () => {
       vigente = false;
     };
@@ -59,19 +107,31 @@ export function App() {
     () => ({
       verify: async (imagen: Bitmap): Promise<Verdict> => {
         try {
-          const res = await fetch(
-            `${GATE_URL}/verificar?w=${imagen.width}&h=${imagen.height}`,
-            // Copia con su propio ArrayBuffer: `Uint8Array<ArrayBufferLike>` no es
-            // un `BodyInit` válido en TypeScript.
-            { method: "POST", body: new Uint8Array(imagen.data) }
-          );
-          if (!res.ok) throw new Error(`el gate respondió ${res.status}`);
-          return (await res.json()) as Verdict;
+          try {
+            const veredicto = await pedirVeredicto(imagen);
+            setGate("conectado");
+            setGateNote(null);
+            return veredicto;
+          } catch (error) {
+            const fallo = error as FalloDelGate;
+            // Un fallo de red no trae `reintentar`: se reintenta una vez. Un 503
+            // también, respetando lo que pida el servidor. Un 401, 403, 413 o 429
+            // no se repite: el problema no se arregla insistiendo.
+            const deRed = fallo.reintentar === undefined;
+            if (!deRed && fallo.reintentar !== true) throw error;
+            const espera = (fallo.esperaMs ?? 0) + 150 + Math.random() * 250;
+            await new Promise((listo) => setTimeout(listo, espera));
+            const veredicto = await pedirVeredicto(imagen);
+            setGate("conectado");
+            setGateNote(null);
+            return veredicto;
+          }
         } catch (error) {
           // El campo ignora a propósito los fallos del verificador para no dejar a
           // nadie sin firmar; aquí, en el arnés, ese silencio se convierte en un
           // aviso visible: si no hay gate, no se está validando nada.
           setGate("sin servicio");
+          setGateNote(error instanceof Error ? error.message : "fallo del verificador");
           throw error;
         }
       },
@@ -131,7 +191,7 @@ export function App() {
           />
           Verificación visual: {gate}
           {gate === "sin servicio"
-            ? " (arranca `pnpm --filter @firma-kit/eval serve`)"
+            ? ` (${gateNote ?? "arranca `pnpm --filter @firma-kit/eval serve`"})`
             : ""}
         </p>
       </header>
