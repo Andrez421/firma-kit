@@ -40,6 +40,7 @@ import {
 
 import { createCanvasPngEncoder, toPngBlob } from "./encoder.js";
 import { planDePintado, type EstadoDelLienzo } from "./paintPlan.js";
+import { startStroke, TOOLBAR_DEFAULT, type ToolbarAction } from "./strokes.js";
 import {
   loadFont,
   createCanvasTextMeasurer,
@@ -147,6 +148,8 @@ const MODE_ORDER: SignatureMode[] = ["draw", "type", "upload", "camera"];
  */
 const CANVAS_SIZE = { width: 600, height: 200 };
 
+export type { ToolbarAction };
+
 export type SignatureFieldProps = {
   /** Modos ofrecidos, en orden. Por defecto los cuatro. */
   modes?: SignatureMode[];
@@ -178,6 +181,18 @@ export type SignatureFieldProps = {
    * grueso sin reimplementar el modo.
    */
   stroke?: StrokeOptions;
+  /**
+   * Acciones de la barra, en el orden en que se quieren. Omitirlo deja el orden de
+   * siempre; una lista vacía deja el campo sin barra (el padre manda con el ref).
+   * Las acciones que no aplican al modo activo no se pintan.
+   */
+  toolbar?: ToolbarAction[];
+  /**
+   * Une cada trazo nuevo al último punto del anterior, en vez de empezar donde se
+   * apoya el puntero. Sirve para firmar en varias pasadas; apagado por defecto,
+   * porque un trazo que se une solo puede sorprender a quien no lo pidió.
+   */
+  strokeLink?: boolean;
   /**
    * Tamaño del campo: cambia el lienzo y el aire, nunca los objetivos táctiles,
    * que siguen en 44px como mínimo.
@@ -265,6 +280,8 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       maxLines = 2,
       stroke,
       theme,
+      toolbar,
+      strokeLink = false,
       fonts = [...TYPE_FONTS],
       font,
       onFontChange,
@@ -788,7 +805,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
                 }
                 // Un trazo nuevo invalida lo que se podía rehacer.
                 setUndone([]);
-                setStrokes((previos) => [...previos, [p]]);
+                setStrokes((previos) => startStroke(previos, p, strokeLink));
               }}
               onPointerMove={(event) => {
                 if (!drawing.current || erasing) return;
@@ -922,57 +939,84 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
           ) : null}
 
           <div className="signature__actions">
-            {mode === "draw" ? (
-              <>
+            {(toolbar ?? TOOLBAR_DEFAULT).map((accion) => {
+              // Las acciones de dibujo no tienen sentido en otro modo: se omiten en
+              // vez de aparecer deshabilitadas.
+              if (accion === "undo") {
+                return mode === "draw" ? (
+                  <button
+                    key={accion}
+                    type="button"
+                    className="signature__button"
+                    onClick={undo}
+                    disabled={strokes.length === 0}
+                  >
+                    {texts.undo}
+                  </button>
+                ) : null;
+              }
+              if (accion === "redo") {
+                return mode === "draw" ? (
+                  <button
+                    key={accion}
+                    type="button"
+                    className="signature__button"
+                    onClick={redo}
+                    disabled={undone.length === 0}
+                  >
+                    {texts.redo}
+                  </button>
+                ) : null;
+              }
+              if (accion === "erase") {
+                return mode === "draw" ? (
+                  <button
+                    key={accion}
+                    type="button"
+                    className={
+                      erasing
+                        ? "signature__button signature__button--active"
+                        : "signature__button"
+                    }
+                    onClick={() => setErasing((valor) => !valor)}
+                    aria-pressed={erasing}
+                  >
+                    {texts.erase}
+                  </button>
+                ) : null;
+              }
+              if (accion === "fullscreen") {
+                return mode === "draw" ? (
+                  <button
+                    key={accion}
+                    type="button"
+                    className="signature__button"
+                    onClick={() => setExpanded((valor) => !valor)}
+                    aria-pressed={expanded}
+                  >
+                    {texts.fullscreen}
+                  </button>
+                ) : null;
+              }
+              if (accion === "clear") {
+                return (
+                  <button key={accion} type="button" className="signature__button" onClick={clear}>
+                    {texts.clear}
+                  </button>
+                );
+              }
+              return (
                 <button
+                  key={accion}
                   type="button"
-                  className="signature__button"
-                  onClick={undo}
-                  disabled={strokes.length === 0}
+                  className="signature__button signature__button--primary"
+                  onClick={() => void confirm()}
+                  disabled={busy}
                 >
-                  {texts.undo}
+                  {busy ? texts.busy : texts.confirm}
                 </button>
-                <button
-                  type="button"
-                  className="signature__button"
-                  onClick={redo}
-                  disabled={undone.length === 0}
-                >
-                  {texts.redo}
-                </button>
-                <button
-                  type="button"
-                  className={
-                    erasing
-                      ? "signature__button signature__button--active"
-                      : "signature__button"
-                  }
-                  onClick={() => setErasing((valor) => !valor)}
-                  aria-pressed={erasing}
-                >
-                  {texts.erase}
-                </button>
-                <button
-                  type="button"
-                  className="signature__button"
-                  onClick={() => setExpanded((valor) => !valor)}
-                  aria-pressed={expanded}
-                >
-                  {texts.fullscreen}
-                </button>
-              </>
-            ) : null}
-            <button type="button" className="signature__button" onClick={clear}>
-              {texts.clear}
-            </button>
-            <button
-              type="button"
-              className="signature__button signature__button--primary"
-              onClick={() => void confirm()}
-              disabled={busy}
-            >
-              {busy ? texts.busy : texts.confirm}
-            </button>
+              );
+            })}
           </div>
 
           {error ? (

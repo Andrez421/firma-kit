@@ -82,11 +82,28 @@ for the person signing, in `en` or `es`.
 | `onFontChange` | `(font: TypeFont) => void` | — | Fires when the person picks a style |
 | `locale` | `"en" \| "es"` | `"en"` | Language of labels and rejection messages |
 | `theme` | `"light" \| "dark"` | system | Forces the colour scheme |
+| `stroke` | `StrokeOptions` | package defaults | Stroke width, smoothing, ink level |
+| `toolbar` | `ToolbarAction[]` | all six | Which buttons appear and in what order. Empty means no toolbar at all |
+| `strokeLink` | `boolean` | `false` | Every new stroke starts at the end of the previous one, joined by a line |
 | `label` | `string` | localised | Accessible name of the tab list |
 | `className` | `string` | — | Extra class on the root |
 | `encoder`, `measurer`, `rasterizer` | ports | browser implementations | Injection points for tests and servers |
 
 Ref handle: `clear()`, `confirm()`, `openMode(mode)`.
+
+```tsx
+// A toolbar of your own, and a signature written in several passes.
+<SignatureField
+  toolbar={["undo", "clear", "confirm"]}
+  strokeLink
+  stroke={{ minWidth: 1, maxWidth: 4 }}
+/>
+```
+
+`ToolbarAction` is `"undo" | "redo" | "erase" | "fullscreen" | "clear" | "confirm"`.
+Actions that do not apply to the active mode are omitted, never shown disabled, and
+with `toolbar={[]}` the field has no buttons at all: the parent drives it through the
+ref.
 
 `foto` is hidden when `navigator.mediaDevices` is missing; `escribir` is hidden
 without `name`. Offering a mode that cannot work is worse than not offering it.

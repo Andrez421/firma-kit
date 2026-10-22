@@ -43,7 +43,11 @@ personalización amplia. Rama `feat/demo-playground`.
   mitad como código muerto. Verificado en Chromium: tema claro/oscuro y su persistencia,
   ida y vuelta de la URL, 7 presets con efectos, apagado de modos, firma de prueba
   (547×84, 3 978 bytes) y cero respuestas >= 400.
-- T4 pendiente: pide decisión del dueño porque cambia el contrato público.
+- T4 hecho en `feat/toolbar-strokeline`: el dueño eligió `toolbar` (lista ordenada) y
+  `strokeLink` (booleano) como props sueltas. El helper `startStroke` aísla la decisión
+  del trazo para poder probarla sin DOM. La prueba de navegador destapó un defecto en el
+  demo: `normalizar` reconstruía la barra en el orden canónico, así que reordenar no se
+  veía y el enlace compartido lo perdía; corregido y verificado con ida y vuelta.
 
 ## Log
 

@@ -4,9 +4,10 @@
 // se codifica en la URL y se muestra como props: no hay una segunda fuente de verdad.
 import type { Locale, SignatureMode, TypeFont } from "@firma-kit/core";
 
-import { ALL_MODES, FONTS, type DemoConfig } from "../../lib/config.js";
+import { ALL_ACTIONS, ALL_MODES, FONTS, type DemoConfig } from "../../lib/config.js";
 import { PANEL_COPY } from "../../lib/copy.js";
 import { FIELD_PRESETS, type FieldPreset } from "../../lib/presets.js";
+import type { ToolbarAction } from "@firma-kit/react";
 
 type Props = {
   config: DemoConfig;
@@ -22,11 +23,39 @@ const MODE_LABEL: Record<SignatureMode, { en: string; es: string }> = {
   camera: { en: "Camera", es: "Cámara" },
 };
 
+const ACTION_LABEL: Record<ToolbarAction, { en: string; es: string }> = {
+  undo: { en: "Undo", es: "Deshacer" },
+  redo: { en: "Redo", es: "Rehacer" },
+  erase: { en: "Erase", es: "Borrar" },
+  fullscreen: { en: "Full screen", es: "Pantalla completa" },
+  clear: { en: "Clear", es: "Limpiar" },
+  confirm: { en: "Confirm", es: "Confirmar" },
+};
+
 export function Controls({ config, activePreset, onChange, onPreset }: Props) {
   const copy = PANEL_COPY[config.locale];
   const parche = (cambios: Partial<DemoConfig>) => onChange({ ...config, ...cambios });
   const trazo = (cambios: Partial<DemoConfig["stroke"]>) =>
     onChange({ ...config, stroke: { ...config.stroke, ...cambios } });
+
+  // La barra se reordena moviendo elementos de la lista: el orden de la lista es el
+  // orden de los botones, sin índices paralelos que se puedan desincronizar.
+  const mover = (indice: number, salto: number) => {
+    const destino = indice + salto;
+    if (destino < 0 || destino >= config.toolbar.length) return;
+    const copia = [...config.toolbar];
+    [copia[indice], copia[destino]] = [copia[destino]!, copia[indice]!];
+    parche({ toolbar: copia });
+  };
+
+  const alternarAccion = (accion: ToolbarAction) => {
+    const activa = config.toolbar.includes(accion);
+    parche({
+      toolbar: activa
+        ? config.toolbar.filter((actual) => actual !== accion)
+        : [...config.toolbar, accion],
+    });
+  };
 
   const alternarModo = (modo: SignatureMode) => {
     const activos = config.modes.includes(modo)
@@ -259,6 +288,70 @@ export function Controls({ config, activePreset, onChange, onPreset }: Props) {
             onChange={(evento) => trazo({ maxSpeed: Number(evento.target.value) })}
           />
         </label>
+      </section>
+
+      <section>
+        <h2>{copy.behaviour}</h2>
+        <h3>{copy.toolbar}</h3>
+        <p className="hint">{copy.toolbarNote}</p>
+        <ol className="order-list">
+          {config.toolbar.map((accion, indice) => (
+            <li key={accion} className="order-row">
+              <span>{ACTION_LABEL[accion][config.locale]}</span>
+              <span className="order-buttons">
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => mover(indice, -1)}
+                  disabled={indice === 0}
+                  aria-label={`${copy.up}: ${ACTION_LABEL[accion][config.locale]}`}
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => mover(indice, 1)}
+                  disabled={indice === config.toolbar.length - 1}
+                  aria-label={`${copy.down}: ${ACTION_LABEL[accion][config.locale]}`}
+                >
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  className="icon-button"
+                  onClick={() => alternarAccion(accion)}
+                  aria-label={`${copy.outBar}: ${ACTION_LABEL[accion][config.locale]}`}
+                >
+                  ×
+                </button>
+              </span>
+            </li>
+          ))}
+        </ol>
+        {config.toolbar.length === 0 ? <p className="hint">{copy.toolbarNote}</p> : null}
+        <div className="chips">
+          {ALL_ACTIONS.filter((accion) => !config.toolbar.includes(accion)).map((accion) => (
+            <button
+              key={accion}
+              type="button"
+              className="chip chip-button"
+              onClick={() => alternarAccion(accion)}
+            >
+              + {ACTION_LABEL[accion][config.locale]}
+            </button>
+          ))}
+        </div>
+
+        <label className="chip" data-active={config.strokeLink}>
+          <input
+            type="checkbox"
+            checked={config.strokeLink}
+            onChange={() => parche({ strokeLink: !config.strokeLink })}
+          />
+          {copy.strokeLink}
+        </label>
+        <p className="hint">{copy.strokeLinkNote}</p>
       </section>
 
       <section>
