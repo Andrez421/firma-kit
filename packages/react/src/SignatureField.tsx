@@ -72,9 +72,7 @@ type FieldText = {
   hint: string;
   filePreviewAlt: string;
   previewAlt: string;
-  linesLabel: string;
-  oneLine: string;
-  twoLines: string;
+  resizeLabel: string;
   typePreviewAlt: string;
   typeEmpty: string;
   chooseFile: string;
@@ -91,9 +89,7 @@ const FIELD_TEXT: Record<Locale, FieldText> = {
   en: {
     canvas: "Area to draw the signature with a finger or pointer",
     fontLabel: "Handwriting style",
-    linesLabel: "Lines",
-    oneLine: "One line",
-    twoLines: "Two lines",
+    resizeLabel: "Resize the signing box",
     typePreviewAlt: "Live preview of your name in the chosen handwriting",
     typeEmpty: "Type your name to see it in cursive.",
     chooseFile: "Choose an image before continuing.",
@@ -117,9 +113,7 @@ const FIELD_TEXT: Record<Locale, FieldText> = {
   es: {
     canvas: "Zona para dibujar la firma con el dedo o el puntero",
     fontLabel: "Estilo de letra",
-    linesLabel: "Líneas",
-    oneLine: "Una línea",
-    twoLines: "Dos líneas",
+    resizeLabel: "Ajustar el recuadro de la firma",
     typePreviewAlt: "Vista previa de tu nombre con la letra elegida",
     typeEmpty: "Escribe tu nombre para verlo en cursiva.",
     chooseFile: "Elige una imagen antes de continuar.",
@@ -152,6 +146,25 @@ const MODE_ORDER: SignatureMode[] = ["draw", "type", "upload", "camera"];
 const CANVAS_SIZE = { width: 600, height: 200 };
 
 export type { ToolbarAction };
+
+/** Esquinas del recuadro de escribir, en el orden en que se dibujan. */
+const ESQUINAS = ["nw", "ne", "sw", "se"] as const;
+type Esquina = (typeof ESQUINAS)[number];
+
+const TIPO_MIN = { width: 260, height: 80 };
+const TIPO_MAX = { width: 900, height: 320 };
+
+const limitar = (valor: number, minimo: number, maximo: number): number =>
+  Math.min(maximo, Math.max(minimo, Math.round(valor)));
+
+/**
+ * Tope real del recuadro: el menor entre el máximo del diseño y el ancho del panel.
+ * Un contenedor sin medir (0, como en un test sin layout) no puede recortar nada.
+ */
+const anchoMaximo = (envoltorio: HTMLElement | null): number => {
+  const disponible = envoltorio?.clientWidth ?? 0;
+  return disponible > 0 ? Math.min(TIPO_MAX.width, disponible) : TIPO_MAX.width;
+};
 
 export type SignatureFieldProps = {
   /** Modos ofrecidos, en orden. Por defecto los cuatro. */
@@ -205,7 +218,6 @@ export type SignatureFieldProps = {
    * Líneas que puede ocupar el nombre escrito. Por defecto 2; con 1 el nombre se
    * reduce hasta caber en una sola línea y la hoja se hace más baja.
    */
-  maxLines?: 1 | 2;
   /** Cursivas ofrecidas en el modo escribir. Por defecto, las cuatro del paquete. */
   fonts?: TypeFont[];
   /** Cursiva elegida (modo controlado). */
@@ -280,7 +292,6 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       locale = "en",
       maxBytes = 5 * 1024 * 1024,
       size = "md",
-      maxLines = 2,
       stroke,
       theme,
       toolbar,
@@ -319,18 +330,19 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
     // La cursiva elegida: controlada por el padre si pasa `font`, si no interna.
     const [chosenFont, setChosenFont] = useState<TypeFont>(font ?? fonts[0] ?? "Caveat");
     const activeFont = font ?? chosenFont;
-    const [lines, setLines] = useState<1 | 2>(maxLines);
-    // La prop manda: si el padre cambia `maxLines`, el campo tiene que seguirlo. Antes
-    // solo se leía al montar, así que un panel que la cambiara no hacía nada.
-    useEffect(() => {
-      setLines(maxLines);
-    }, [maxLines]);
+    // Tamaño del recuadro de escribir. Se ajusta arrastrando las esquinas y el texto se
+    // recoloca solo: el layout busca el tamaño de letra que cabe en esa caja.
+    const [typeSize, setTypeSize] = useState({ width: CANVAS_SIZE.width, height: 120 });
+    const arrastre = useRef<{
+      x: number;
+      y: number;
+      ancho: number;
+      alto: number;
+      esquina: Esquina;
+    } | null>(null);
     // La hoja del modo escribir se adapta a las líneas: una firma de una línea no
     // necesita el alto de dos.
-    const typeCanvas = useMemo(
-      () => ({ width: CANVAS_SIZE.width, height: lines === 1 ? 120 : 200 }),
-      [lines]
-    );
+    const typeCanvas = typeSize;
 
     const drawing = useRef(false);
     const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -383,6 +395,9 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
     // Preview en vivo del modo escribir: se pinta con el mismo layout y el mismo
     // rasterizador que la firma final, así que lo que se ve es lo que se guarda.
     const typePreviewRef = useRef<HTMLCanvasElement | null>(null);
+    // Ancho disponible del panel: el recuadro no puede crecer más de lo que se ve, o
+    // el tamaño guardado no coincidiría con el que la persona está mirando.
+    const typeWrapRef = useRef<HTMLDivElement | null>(null);
     useEffect(() => {
       if (mode !== "type") return;
       const canvas = typePreviewRef.current;
@@ -401,7 +416,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
         const layout = texto
           ? layoutTypedName(texto, typeCanvas, effectiveMeasurer, {
               family: activeFont,
-              maxLines: lines,
+              maxLines: 3,
             })
           : null;
         if (!layout) {
@@ -423,7 +438,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       return () => {
         cancelado = true;
       };
-    }, [mode, name, activeFont, lines, typeCanvas, effectiveMeasurer, effectiveRasterizer]);
+    }, [mode, name, activeFont, typeCanvas, effectiveMeasurer, effectiveRasterizer]);
 
     // Vista previa del archivo elegido: antes solo se veía el nombre del input
     // nativo, así que se confirmaba a ciegas también aquí.
@@ -504,6 +519,68 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       ctx.putImageData(image, 0, 0);
       pintado.current = actual;
     }, [points, strokes, mode, stroke, finalizado]);
+
+    const empezarArrastre = (evento: React.PointerEvent, esquina: Esquina) => {
+      evento.preventDefault();
+      evento.currentTarget.setPointerCapture(evento.pointerId);
+      arrastre.current = {
+        x: evento.clientX,
+        y: evento.clientY,
+        ancho: typeSize.width,
+        alto: typeSize.height,
+        esquina,
+      };
+    };
+
+    const moverArrastre = (evento: React.PointerEvent) => {
+      const inicio = arrastre.current;
+      if (!inicio) return;
+      // Arrastrar la esquina izquierda agranda hacia la izquierda: el signo lo decide
+      // la esquina, no el sentido del movimiento.
+      const signoX = inicio.esquina.includes("e") ? 1 : -1;
+      const signoY = inicio.esquina.includes("s") ? 1 : -1;
+      setTypeSize({
+        width: limitar(
+          inicio.ancho + (evento.clientX - inicio.x) * signoX,
+          TIPO_MIN.width,
+          anchoMaximo(typeWrapRef.current)
+        ),
+        height: limitar(
+          inicio.alto + (evento.clientY - inicio.y) * signoY,
+          TIPO_MIN.height,
+          TIPO_MAX.height
+        ),
+      });
+    };
+
+    const terminarArrastre = () => {
+      arrastre.current = null;
+    };
+
+    // Mismo ajuste con el teclado: las esquinas son botones y responden a las flechas,
+    // así que el recuadro no depende de arrastrar con precisión.
+    const redimensionarConTeclado = (evento: React.KeyboardEvent, esquina: Esquina) => {
+      const paso = evento.shiftKey ? 40 : 10;
+      const signoX = esquina.includes("e") ? 1 : -1;
+      const signoY = esquina.includes("s") ? 1 : -1;
+      const delta = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[
+        evento.key
+      ];
+      if (!delta) return;
+      evento.preventDefault();
+      setTypeSize((actual) => ({
+        width: limitar(
+          actual.width + delta[0]! * paso * signoX,
+          TIPO_MIN.width,
+          anchoMaximo(typeWrapRef.current)
+        ),
+        height: limitar(
+          actual.height + delta[1]! * paso * signoY,
+          TIPO_MIN.height,
+          TIPO_MAX.height
+        ),
+      }));
+    };
 
     const clear = useCallback(() => {
       setStrokes([]);
@@ -586,7 +663,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
               measurer: effectiveMeasurer,
               rasterizer: effectiveRasterizer,
               font: activeFont,
-              maxLines: lines,
+              maxLines: 3,
             },
             effectiveEncoder,
             coreOptions
@@ -881,42 +958,35 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
                   ))}
                 </div>
               ) : null}
-              <div
-                className="signature__line-options"
-                role="radiogroup"
-                aria-label={texts.linesLabel}
-              >
-                {([1, 2] as const).map((opcion) => (
-                  <label
-                    key={opcion}
-                    className={
-                      opcion === lines
-                        ? "signature__line signature__line--active"
-                        : "signature__line"
-                    }
-                  >
-                    <input
-                      type="radio"
-                      name={`${baseId}-lines`}
-                      checked={opcion === lines}
-                      onChange={() => setLines(opcion)}
-                    />
-                    {opcion === 1 ? texts.oneLine : texts.twoLines}
-                  </label>
-                ))}
-              </div>
-              <div className="signature__canvas-wrap">
+              <div className="signature__canvas-wrap" ref={typeWrapRef}>
                 {!name?.trim() ? (
                   <p className="signature__hint" aria-hidden="true">
                     {texts.typeEmpty}
                   </p>
                 ) : null}
-                <canvas
-                  ref={typePreviewRef}
-                  className="signature__canvas signature__type-preview"
-                  style={{ height: typeCanvas.height }}
-                  aria-label={texts.typePreviewAlt}
-                />
+                <div
+                  className="signature__type-box"
+                  style={{ width: typeCanvas.width, height: typeCanvas.height }}
+                >
+                  <canvas
+                    ref={typePreviewRef}
+                    className="signature__canvas signature__type-preview"
+                    aria-label={texts.typePreviewAlt}
+                  />
+                  {ESQUINAS.map((esquina) => (
+                    <button
+                      key={esquina}
+                      type="button"
+                      className={`signature__resize signature__resize--${esquina}`}
+                      aria-label={`${texts.resizeLabel} (${esquina})`}
+                      onPointerDown={(evento) => empezarArrastre(evento, esquina)}
+                      onPointerMove={moverArrastre}
+                      onPointerUp={terminarArrastre}
+                      onPointerCancel={terminarArrastre}
+                      onKeyDown={(evento) => redimensionarConTeclado(evento, esquina)}
+                    />
+                  ))}
+                </div>
               </div>
             </div>
           ) : null}

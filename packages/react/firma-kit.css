@@ -281,13 +281,16 @@
 
 /* Cursivas: muestras sobre hairline; la activa se marca con el bloque. */
 .signature__font-options {
-  display: flex;
-  flex-wrap: nowrap;
+  display: grid;
+  /* Diez cursivas en dos filas de cinco. */
   gap: 6px;
-  /* Las cuatro cursivas caben en una fila; si el ancho es menor, se desplazan en
-     horizontal en vez de romper la fila y empujar el lienzo hacia abajo. */
-  overflow-x: auto;
-  padding-bottom: 2px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+@media (max-width: 560px) {
+  .signature__font-options {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
 }
 
 .signature__font {
@@ -299,8 +302,13 @@
   flex: 0 0 auto;
   font-size: 1.05rem;
   gap: 6px;
+  justify-content: center;
   min-height: 44px;
-  padding: 6px 10px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 6px 8px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .signature__font:hover {
@@ -311,30 +319,94 @@
   border-color: var(--signature-focus);
 }
 
-.signature__line-options {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
+/* El recuadro de escribir se ajusta desde las esquinas. El texto se recoloca solo
+   porque el layout busca el tamaño de letra que cabe en esta caja. */
+.signature__type-box {
+  display: inline-block;
+  max-width: 100%;
+  position: relative;
+}
+
+.signature__type-preview {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.signature__resize {
+  background: transparent;
+  border: 0;
+  height: 44px;
+  padding: 0;
+  position: absolute;
+  width: 44px;
+  /* Objetivo táctil de 44px con una marca visual pequeña: el cuadrado diminuto no
+     se puede acertar con un dedo. */
+  z-index: 1;
+}
+
+.signature__resize::before {
+  background: var(--signature-focus);
+  border: 1px solid var(--signature-surface);
+  border-radius: 2px;
+  content: "";
+  height: 10px;
+  position: absolute;
+  width: 10px;
+}
+
+.signature__resize--nw {
+  cursor: nwse-resize;
+  left: -22px;
+  top: -22px;
+}
+
+.signature__resize--nw::before {
+  bottom: 8px;
+  right: 8px;
+}
+
+.signature__resize--ne {
+  cursor: nesw-resize;
+  right: -22px;
+  top: -22px;
+}
+
+.signature__resize--ne::before {
+  bottom: 8px;
+  left: 8px;
+}
+
+.signature__resize--sw {
+  bottom: -22px;
+  cursor: nesw-resize;
+  left: -22px;
+}
+
+.signature__resize--sw::before {
+  right: 8px;
+  top: 8px;
+}
+
+.signature__resize--se {
+  bottom: -22px;
+  cursor: nwse-resize;
+  right: -22px;
+}
+
+.signature__resize--se::before {
+  left: 8px;
+  top: 8px;
+}
+
+.signature__resize:focus-visible {
+  border-radius: 8px;
+  outline: 2px solid var(--signature-focus);
+  outline-offset: -10px;
 }
 
 /* Mismo vocabulario que las cursivas: hairline, y la activa se marca con el
    borde bermellón. */
-.signature__line {
-  align-items: center;
-  border: 1px solid var(--signature-border);
-  border-radius: var(--signature-radius);
-  cursor: pointer;
-  display: inline-flex;
-  font-size: 0.95rem;
-  gap: 8px;
-  min-height: 44px;
-  padding: 9px 14px;
-}
-
-.signature__line--active {
-  border-color: var(--signature-focus);
-}
-
 .signature__type-preview {
   display: block;
   width: 100%;
