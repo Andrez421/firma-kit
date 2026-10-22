@@ -131,7 +131,7 @@ describe("<SignatureField />", () => {
     fireEvent.click(screen.getByRole("tab", { name: "Upload" }));
     fireEvent.click(screen.getByRole("button", { name: "Use this signature" }));
     expect(
-      await screen.findByText("Choose an image before continuing")
+      await screen.findByText("Choose an image before continuing.")
     ).toBeTruthy();
     expect(onRejection).not.toHaveBeenCalled();
   });
@@ -153,6 +153,18 @@ describe("<SignatureField />", () => {
       "empty",
       MESSAGES_ES.empty
     );
+  });
+
+  it("keeps the Spanish copy exactly as the baseline had it", async () => {
+    // Regresión de copy: la tabla por idioma perdía el punto final de los
+    // mensajes que ya existían antes del renombrado.
+    const onRejection = vi.fn();
+    render(<SignatureField locale="es" onRejection={onRejection} encoder={encoder()} />);
+    fireEvent.click(screen.getByRole("tab", { name: "Subir imagen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Usar esta firma" }));
+    expect(
+      await screen.findByText("Elige una imagen antes de continuar.")
+    ).toBeTruthy();
   });
 
   it("speaks Spanish when the caller asks for it", () => {

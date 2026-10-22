@@ -49,8 +49,8 @@ const FIELD_TEXT: Record<Locale, Record<string, string>> = {
   en: {
     canvas: "Area to draw the signature with a finger or pointer",
     typeHint: "Your name will be written in cursive",
-    typeEmpty: "Type your name to see it in cursive",
-    chooseFile: "Choose an image before continuing",
+    typeEmpty: "Type your name to see it in cursive.",
+    chooseFile: "Choose an image before continuing.",
     upload: "Upload an image of the signature",
     camera: "Take a photo of the signature",
     clear: "Clear",
@@ -61,8 +61,8 @@ const FIELD_TEXT: Record<Locale, Record<string, string>> = {
   es: {
     canvas: "Zona para dibujar la firma con el dedo o el puntero",
     typeHint: "Tu nombre se escribirá en cursiva",
-    typeEmpty: "Escribe tu nombre para verlo en cursiva",
-    chooseFile: "Elige una imagen antes de continuar",
+    typeEmpty: "Escribe tu nombre para verlo en cursiva.",
+    chooseFile: "Elige una imagen antes de continuar.",
     upload: "Subir imagen de la firma",
     camera: "Tomar foto de la firma",
     clear: "Limpiar",
