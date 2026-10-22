@@ -168,6 +168,72 @@ describe("<SignatureField />", () => {
     expect(onSignature).toHaveBeenCalledWith(null);
   });
 
+  it("rejects a file whose bytes are not PNG or JPEG, before decoding it", async () => {
+    // Un PDF renombrado a .png: el MIME declarado no basta, mandan los magic bytes.
+    const onRejection = vi.fn();
+    const png = encoder();
+    const { container } = render(
+      <SignatureField modes={["upload"]} onRejection={onRejection} encoder={png} />
+    );
+    const archivo = new File([new Uint8Array([0x25, 0x50, 0x44, 0x46])], "firma.png", {
+      type: "image/png",
+    });
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [archivo] } });
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Use this signature" }));
+    await screen.findByRole("alert");
+    expect(onRejection).toHaveBeenCalledWith(
+      "unsupported_format",
+      expect.stringContaining("PNG or JPG")
+    );
+    expect(png).not.toHaveBeenCalled();
+  });
+
+  it("rejects a file over the size limit without touching it", async () => {
+    const onRejection = vi.fn();
+    const png = encoder();
+    const { container } = render(
+      <SignatureField
+        modes={["upload"]}
+        maxBytes={10}
+        onRejection={onRejection}
+        encoder={png}
+      />
+    );
+    const archivo = new File([new Uint8Array(100)], "grande.png", { type: "image/png" });
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [archivo] } });
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Use this signature" }));
+    await screen.findByRole("alert");
+    expect(onRejection).toHaveBeenCalledWith("too_heavy", expect.any(String));
+    expect(png).not.toHaveBeenCalled();
+  });
+
+  it("says the rejection in Spanish when asked", async () => {
+    const onRejection = vi.fn();
+    const { container } = render(
+      <SignatureField
+        modes={["upload"]}
+        locale="es"
+        maxBytes={10}
+        onRejection={onRejection}
+        encoder={encoder()}
+      />
+    );
+    const archivo = new File([new Uint8Array(100)], "grande.png", { type: "image/png" });
+    const input = container.querySelector<HTMLInputElement>('input[type="file"]')!;
+    await act(async () => {
+      fireEvent.change(input, { target: { files: [archivo] } });
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Usar esta firma" }));
+    await screen.findByRole("alert");
+    expect(onRejection).toHaveBeenCalledWith("too_heavy", MESSAGES_ES.too_heavy);
+  });
+
   it("asks for an image before confirming in upload mode", async () => {
     const onRejection = vi.fn();
     render(<SignatureField onRejection={onRejection} encoder={encoder()} />);
