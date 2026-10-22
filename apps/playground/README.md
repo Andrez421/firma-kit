@@ -34,13 +34,25 @@ dispositivo, el campo busca el gate en **el mismo host que sirvió la página**,
 que el servicio tiene que escuchar en esa interfaz:
 
 ```bash
-GATE_HOST=0.0.0.0 FIRMA_KIT_MODULES_DIR=~/firma-kit-modules \
+# servicio: exige token fuera de loopback y solo atiende al arnés
+GATE_HOST=0.0.0.0 \
+GATE_TOKEN=un-token-largo-y-propio \
+GATE_ORIGINS=http://100.83.204.18:5173 \
+FIRMA_KIT_MODULES_DIR=~/firma-kit-modules \
   pnpm --filter @firma-kit/eval serve
+
+# arnés: el mismo token, en el bundle de desarrollo
+VITE_GATE_TOKEN=un-token-largo-y-propio \
+  pnpm --filter @firma-kit/playground dev --host
 ```
 
-Es un servicio de desarrollo **sin autenticación**: expuesto en `0.0.0.0` queda
-visible para toda la red, así que úsalo solo en una red de confianza y apágalo al
-terminar. `VITE_GATE_URL` fuerza otra URL si lo prefieres.
+Fuera de loopback el servicio **se niega a arrancar sin token**, y solo contesta a
+los orígenes de `GATE_ORIGINS` (más el preflight que esa cabecera obliga a hacer).
+Un `POST` binario sin cabeceras es una *petición simple*: sin token, cualquier
+página que la persona visite podría usar el gate como oráculo.
+
+Si el indicador dice «sin servicio (…)», el paréntesis dice por qué: servicio
+apagado, token que no coincide o timeout. `VITE_GATE_URL` fuerza otra URL.
 
 Con el servicio levantado, subir una cédula, una factura o la foto de un objeto se
 rechaza con «La imagen no parece una firma…», y una foto de una firma real pasa.
