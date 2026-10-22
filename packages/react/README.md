@@ -22,9 +22,11 @@ import { SignatureField } from "@firma-kit/react";
 ```
 
 The stylesheet is required: without it the component has no surface, no spacing
-and no contrast. The four handwriting fonts ship with it (OFL, 142 KB), and the
-type mode offers them as a radiogroup where each option is drawn in its own
-cursive — picking a style by name alone tells you nothing.
+and no contrast. It also brings the four handwriting fonts with it (OFL, 142 KB) —
+one import is all you need. The type mode offers them as a radiogroup where each
+option is drawn in its own cursive, because picking a style by name alone tells you
+nothing. If you ship your own fonts, import `@firma-kit/react/fonts.css` alone and
+`firma-kit.css` will not pull them twice.
 
 ## Visual verification
 

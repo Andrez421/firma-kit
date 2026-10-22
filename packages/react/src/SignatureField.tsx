@@ -80,6 +80,7 @@ type FieldText = {
   chooseFile: string;
   upload: string;
   camera: string;
+  cameraHint: string;
   clear: string;
   confirm: string;
   busy: string;
@@ -97,7 +98,8 @@ const FIELD_TEXT: Record<Locale, FieldText> = {
     typeEmpty: "Type your name to see it in cursive.",
     chooseFile: "Choose an image before continuing.",
     upload: "Upload an image of the signature",
-    camera: "Take a photo of the signature",
+    camera: "Open camera",
+    cameraHint: "On a phone this opens the camera; on a desktop it asks for a file.",
     clear: "Clear",
     confirm: "Use this signature",
     undo: "Undo",
@@ -122,7 +124,8 @@ const FIELD_TEXT: Record<Locale, FieldText> = {
     typeEmpty: "Escribe tu nombre para verlo en cursiva.",
     chooseFile: "Elige una imagen antes de continuar.",
     upload: "Subir imagen de la firma",
-    camera: "Tomar foto de la firma",
+    camera: "Abrir cámara",
+    cameraHint: "En el móvil abre la cámara; en escritorio pide un archivo.",
     clear: "Limpiar",
     confirm: "Usar esta firma",
     undo: "Deshacer",
@@ -317,6 +320,11 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
     const [chosenFont, setChosenFont] = useState<TypeFont>(font ?? fonts[0] ?? "Caveat");
     const activeFont = font ?? chosenFont;
     const [lines, setLines] = useState<1 | 2>(maxLines);
+    // La prop manda: si el padre cambia `maxLines`, el campo tiene que seguirlo. Antes
+    // solo se leía al montar, así que un panel que la cambiara no hacía nada.
+    useEffect(() => {
+      setLines(maxLines);
+    }, [maxLines]);
     // La hoja del modo escribir se adapta a las líneas: una firma de una línea no
     // necesita el alto de dos.
     const typeCanvas = useMemo(
@@ -915,9 +923,15 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
 
           {mode === "upload" || mode === "camera" ? (
             <label className="signature__file">
-              <span>
+              <span className="signature__file-title">
                 {mode === "camera" ? texts.camera : texts.upload}
               </span>
+              {mode === "camera" ? (
+                <span className="signature__file-hint">{texts.cameraHint}</span>
+              ) : null}
+              {/* El input nativo se oculta pero sigue siendo el que abre la cámara:
+                  el texto «Seleccionar archivo» del sistema no se puede traducir ni
+                  estilizar, así que el disparador visible es la etiqueta. */}
               <input
                 type="file"
                 accept="image/png,image/jpeg"
