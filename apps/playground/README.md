@@ -23,7 +23,24 @@ FIRMA_KIT_MODULES_DIR=~/firma-kit-modules pnpm --filter @firma-kit/eval serve
 
 El arnés sondea `/salud` al cargar y lo dice en pantalla: **conectado** (verde) o
 **sin servicio** (gris). Sin servicio el campo se comporta como antes — no
-verifica — para que el playground siga sirviendo aunque el modelo no esté.
+verifica — para que el playground siga sirviendo aunque el modelo no esté. Ese
+aviso también aparece si el verificador falla en mitad de una firma: el campo no
+bloquea a la persona, pero el arnés deja de fingir que validó.
+
+### Probarlo desde el móvil (Tailscale)
+
+El servicio escucha en `127.0.0.1` por defecto. Si abres el arnés desde otro
+dispositivo, el campo busca el gate en **el mismo host que sirvió la página**, así
+que el servicio tiene que escuchar en esa interfaz:
+
+```bash
+GATE_HOST=0.0.0.0 FIRMA_KIT_MODULES_DIR=~/firma-kit-modules \
+  pnpm --filter @firma-kit/eval serve
+```
+
+Es un servicio de desarrollo **sin autenticación**: expuesto en `0.0.0.0` queda
+visible para toda la red, así que úsalo solo en una red de confianza y apágalo al
+terminar. `VITE_GATE_URL` fuerza otra URL si lo prefieres.
 
 Con el servicio levantado, subir una cédula, una factura o la foto de un objeto se
 rechaza con «La imagen no parece una firma…», y una foto de una firma real pasa.
