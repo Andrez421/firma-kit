@@ -7,7 +7,11 @@
 
 import { scaleToMaxSide, scaleToWidth } from "./image.js";
 import { rejectionMessage } from "./messages/index.js";
-import { rasterizeStroke, type StrokePoint } from "./modes/draw.js";
+import {
+  rasterizeStroke,
+  type StrokeOptions,
+  type StrokePoint,
+} from "./modes/draw.js";
 import {
   layoutTypedName,
   type TextMeasurer,
@@ -35,6 +39,8 @@ export type SignatureInput =
       mode: "draw";
       points: StrokePoint[];
       canvas: { width: number; height: number };
+      /** Grosor, suavizado y color del trazo. Sin esto, los del paquete. */
+      stroke?: StrokeOptions;
     }
   | {
       mode: "type";
@@ -102,7 +108,7 @@ export async function sign(
   } else {
     let rendered: Bitmap;
     if (input.mode === "draw") {
-      rendered = rasterizeStroke(input.points, input.canvas);
+      rendered = rasterizeStroke(input.points, input.canvas, input.stroke ?? {});
     } else {
       const layout = layoutTypedName(
         input.text,

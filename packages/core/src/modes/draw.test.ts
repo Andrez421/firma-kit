@@ -12,8 +12,8 @@ const ANCHO = 120;
 const ALTO = 48;
 const LIENZO = { width: ANCHO, height: ALTO };
 
-/** Píxeles oscuros: lo que en el PNG final se ve como tinta. */
-function tinta(image: Bitmap): number {
+/** Píxeles oscuros: lo que en el PNG final se ve como ink. */
+function ink(image: Bitmap): number {
   let cuenta = 0;
   for (let i = 0; i < image.data.length; i += 4) {
     if (image.data[i]! < 128) cuenta++;
@@ -36,13 +36,13 @@ describe("rasterizeStroke", () => {
       const image = rasterizeStroke(points, LIENZO);
       expect(image.width).toBe(ANCHO);
       expect(image.height).toBe(ALTO);
-      expect(tinta(image)).toBe(0);
+      expect(ink(image)).toBe(0);
     }
   });
 
   it("pinta el trazo y deja el papel blanco y opaco", () => {
     const image = rasterizeStroke(horizontal(2, 16), LIENZO);
-    expect(tinta(image)).toBeGreaterThan(0);
+    expect(ink(image)).toBeGreaterThan(0);
     // Esquinas: papel puro.
     expect(image.data[0]).toBe(255);
     const ultima = (ALTO - 1) * ANCHO * 4 + (ANCHO - 1) * 4;
@@ -54,8 +54,8 @@ describe("rasterizeStroke", () => {
   });
 
   it("dibuja más fino cuando el puntero va rápido (presión simulada)", () => {
-    const lento = tinta(rasterizeStroke(horizontal(1, 40), LIENZO));
-    const rapido = tinta(rasterizeStroke(horizontal(1, 1), LIENZO));
+    const lento = ink(rasterizeStroke(horizontal(1, 40), LIENZO));
+    const rapido = ink(rasterizeStroke(horizontal(1, 1), LIENZO));
     expect(rapido).toBeGreaterThan(0);
     expect(rapido).toBeLessThan(lento);
   });
@@ -73,15 +73,15 @@ describe("rasterizeStroke", () => {
     ];
     const image = rasterizeStroke(fuera, LIENZO);
     expect(image.data.length).toBe(ANCHO * ALTO * 4);
-    expect(tinta(image)).toBeGreaterThan(0);
+    expect(ink(image)).toBeGreaterThan(0);
   });
 });
 
 describe("strokeWidths", () => {
   it("acota el grosor entre el mínimo y el máximo configurados", () => {
     const widths = strokeWidths(horizontal(1, 1), {
-      grosorMinimo: 1,
-      grosorMaximo: 4,
+      minWidth: 1,
+      maxWidth: 4,
     });
     expect(widths.length).toBe(horizontal(1, 1).length);
     for (const a of widths) {
