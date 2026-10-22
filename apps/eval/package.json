@@ -1,0 +1,18 @@
+{
+  "name": "@firma-kit/eval",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Arnés de evaluación del verificador: matriz de confusión, latencias y puerta de calidad. No se publica.",
+  "scripts": {
+    "eval": "node --experimental-strip-types src/run.ts",
+    "type-check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@firma-kit/core": "workspace:*",
+    "@firma-kit/verify": "workspace:*"
+  },
+  "devDependencies": {
+    "@napi-rs/canvas": "^0.1.80"
+  }
+}
