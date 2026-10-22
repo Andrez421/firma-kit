@@ -44,9 +44,9 @@ export async function loadFont(family: string, size: number): Promise<void> {
 }
 
 export function createCanvasTextMeasurer(
-  crear?: (width: number, height: number) => Lienzo
+  create?: (width: number, height: number) => Lienzo
 ): TextMeasurer {
-  const factory = crear ?? createCanvas;
+  const factory = create ?? createCanvas;
   return {
     measure(text: string, style: TextStyle) {
       const canvas = factory(8, 8);
@@ -59,9 +59,9 @@ export function createCanvasTextMeasurer(
 }
 
 export function createCanvasTextRasterizer(
-  crear?: (width: number, height: number) => Lienzo
+  create?: (width: number, height: number) => Lienzo
 ): TextRasterizer {
-  const factory = crear ?? createCanvas;
+  const factory = create ?? createCanvas;
   return {
     rasterize(lines, style, lineHeight, bounds): Bitmap | null {
       const canvas = factory(bounds.width, bounds.height);

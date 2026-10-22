@@ -34,9 +34,9 @@ function toBlob(canvas: Lienzo): Promise<Blob> {
  * explicable en vez de guardar una image que no existe.
  */
 export function createCanvasPngEncoder(
-  crear?: (width: number, height: number) => Lienzo
+  create?: (width: number, height: number) => Lienzo
 ): PngEncoder {
-  const factory = crear ?? createCanvas;
+  const factory = create ?? createCanvas;
   return async (image: Bitmap) => {
     const canvas = factory(image.width, image.height);
     canvas.width = image.width;
