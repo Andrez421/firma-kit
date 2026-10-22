@@ -143,7 +143,9 @@ export async function startGateServer(opciones: ServeOptions = {}) {
     token,
     origins,
     maxInFlight = 1,
-    rateLimit = { capacity: 20, refillPerSecond: 0.5 },
+    // Cuarenta de golpe y una por segundo: suficiente para que una persona suba
+    // varias imágenes seguidas sin tropezar con el límite, y todavía un techo.
+    rateLimit = { capacity: 40, refillPerSecond: 1 },
     headersTimeoutMs = 10_000,
     requestTimeoutMs = 30_000,
     keepAliveTimeoutMs = 5_000,
