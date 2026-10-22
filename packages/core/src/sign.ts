@@ -50,6 +50,8 @@ export type SignatureInput =
       rasterizer: TextRasterizer;
       /** Cursiva elegida. Sin ella, el layout usa la de por defecto (Caveat). */
       font?: TypeFont;
+      /** Líneas máximas que puede ocupar el nombre. Por defecto, las del layout (2). */
+      maxLines?: number;
     };
 
 /** Ancho del PNG final: una celda impresa de ~90px a 300dpi. */
@@ -114,7 +116,10 @@ export async function sign(
         input.text,
         input.canvas,
         input.measurer,
-        input.font ? { family: input.font } : {}
+        {
+          ...(input.font ? { family: input.font } : {}),
+          ...(input.maxLines ? { maxLines: input.maxLines } : {}),
+        }
       );
       if (!layout) return rejection("empty");
       const painted = input.rasterizer.rasterize(

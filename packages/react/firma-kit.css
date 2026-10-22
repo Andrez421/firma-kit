@@ -212,6 +212,35 @@
   border-color: var(--signature-focus);
 }
 
+.signature__line-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* Mismo vocabulario que las cursivas: hairline, y la activa se marca con el
+   borde bermellón. */
+.signature__line {
+  align-items: center;
+  border: 1px solid var(--signature-border);
+  border-radius: var(--signature-radius);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.95rem;
+  gap: 8px;
+  min-height: 44px;
+  padding: 9px 14px;
+}
+
+.signature__line--active {
+  border-color: var(--signature-focus);
+}
+
+.signature__type-preview {
+  display: block;
+  width: 100%;
+}
+
 .signature__preview {
   color: var(--signature-muted);
   font-size: 0.95rem;
