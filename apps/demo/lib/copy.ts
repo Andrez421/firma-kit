@@ -29,6 +29,8 @@ export const PAGE_COPY = {
     reset: "Reset",
     integration: "How to integrate this in your project →",
     preview: "Preview",
+    rejectionTitle: "That image is not a signature",
+    rejectionClose: "Understood",
   },
   es: {
     title: "firma-kit",
@@ -56,6 +58,8 @@ export const PAGE_COPY = {
     reset: "Restablecer",
     integration: "Cómo integrar esto en tu proyecto →",
     preview: "Vista previa",
+    rejectionTitle: "Esa imagen no corresponde a una firma",
+    rejectionClose: "Entendido",
   },
 } as const;
 
@@ -84,6 +88,7 @@ export const PANEL_COPY = {
     smoothing: "Smoothing",
     ink: "Ink level",
     speed: "Speed to thin out",
+    strokeNote: "These values only affect drawing. A typed signature uses the cursive and the lines above.",
     behaviour: "Behaviour",
     toolbar: "Toolbar",
     toolbarNote: "In this order. Remove them all to use the field without a toolbar.",
@@ -123,6 +128,7 @@ export const PANEL_COPY = {
     smoothing: "Suavizado",
     ink: "Nivel de tinta",
     speed: "Velocidad para adelgazar",
+    strokeNote: "Estos valores solo afectan al modo dibujar. La firma escrita usa la cursiva y las líneas de arriba.",
     behaviour: "Comportamiento",
     toolbar: "Barra de acciones",
     toolbarNote: "En este orden. Si la vacías, el campo queda sin barra y manda el ref.",

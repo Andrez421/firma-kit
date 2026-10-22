@@ -6,6 +6,7 @@ import type { Bitmap, Signature, Verdict, Verifier } from "@firma-kit/core";
 import { SignatureField, toPngBlob, type SignatureFieldHandle } from "@firma-kit/react";
 
 import { Controls } from "./components/Controls.js";
+import { RejectionDialog } from "./components/RejectionDialog.js";
 import {
   DEFAULT_CONFIG,
   decodeConfig,
@@ -161,7 +162,7 @@ export default function Page() {
   const claveCampo = `${config.modes.join("-")}|${config.initialMode}`;
 
   return (
-    <main>
+    <main className={rejection ? "demo-modal-open" : undefined}>
       <header className="demo-header">
         <div>
           <h1>{copy.title}</h1>
@@ -200,6 +201,15 @@ export default function Page() {
         </div>
       </header>
 
+      {rejection ? (
+        <RejectionDialog
+          title={copy.rejectionTitle}
+          message={rejection}
+          close={copy.rejectionClose}
+          onClose={() => setRejection(null)}
+        />
+      ) : null}
+
       <div className="layout">
         <div className="column">
           <SignatureField
@@ -225,7 +235,6 @@ export default function Page() {
               : "The sheet stays white on purpose: the saved signature is always ink on white, whatever the theme."}
           </p>
 
-          {rejection ? <p className="note">{rejection}</p> : null}
           {gate === "off" ? <p className="note">{copy.gateOffNote}</p> : null}
           {gate === "on" && gateNote ? <p className="note">{gateNote}</p> : null}
 

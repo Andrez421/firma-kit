@@ -288,6 +288,7 @@ export function Controls({ config, activePreset, onChange, onPreset }: Props) {
             onChange={(evento) => trazo({ maxSpeed: Number(evento.target.value) })}
           />
         </label>
+        <p className="hint">{copy.strokeNote}</p>
       </section>
 
       <section>
