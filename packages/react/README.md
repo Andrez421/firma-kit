@@ -26,6 +26,24 @@ and no contrast. The four handwriting fonts ship with it (OFL, 142 KB), and the
 type mode offers them as a radiogroup where each option is drawn in its own
 cursive — picking a style by name alone tells you nothing.
 
+## Visual verification
+
+The verifier is a **port**: `{ verify(bitmap) }`. The model runs wherever the image
+lives — usually your server or a worker — and never in the browser, because the
+weights are ~200 MB. The field only calls it for the upload and camera modes, and
+before any cleanup, so an ID card is classified as an ID card and not as "a page
+with text".
+
+If the verifier throws (model not downloaded, service down), the field does **not**
+block the person: verification is a safeguard, not a requirement to sign.
+
+```tsx
+<SignatureField
+  verifier={{ verify: (bitmap) => postToMyGate(bitmap) }}
+  onRejection={(reason, message) => show(message)}
+/>
+```
+
 ## Validation
 
 Uploads and camera captures are checked **before** any decoding work:
@@ -49,7 +67,7 @@ for the person signing, in `en` or `es`.
 | `value` | `Signature \| null` | — | Controlled value; omit for uncontrolled |
 | `onSignature` | `(signature: Signature \| null) => void` | — | Fires on success and on clear |
 | `onRejection` | `(reason, message) => void` | — | Fires on every rejection, message already localised |
-| `verifier` | `Verifier` | — | Visual verification (phase 3); absent means no verification |
+| `verifier` | `Verifier` | — | Visual verification; absent means no verification. Its only method is `verify(bitmap)` |
 | `maxWidth` | `number` | `900` | Final PNG width |
 | `maxBytes` | `number` | `5 * 1024 * 1024` | Uploads above this are rejected before decoding |
 | `fonts` | `TypeFont[]` | all four | Which handwriting styles to offer |

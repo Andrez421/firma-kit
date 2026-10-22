@@ -3,11 +3,15 @@
 // headless verifica: cómo se ven las cursivas reales y si el PNG sale con tinta
 // sobre blanco.
 
-import type { Signature } from "@firma-kit/core";
+import type { Bitmap, Signature, Verdict } from "@firma-kit/core";
 import { SignatureField, toPngBlob } from "@firma-kit/react";
 import { useEffect, useMemo, useState } from "react";
 
 type Tema = "auto" | "light" | "dark";
+
+// Servicio local del gate (`pnpm --filter @firma-kit/eval serve`). El modelo vive
+// en Node: el navegador no puede cargar 201 MB de ONNX en cada visita.
+const GATE_URL = import.meta.env["VITE_GATE_URL"] ?? "http://127.0.0.1:8790";
 
 // Direcciones de color para probar el contrato de personalización sin escribir
 // una hoja de estilos: papel/tinta y un acento distinto por preset.
@@ -29,7 +33,37 @@ export function App() {
   const [name, setName] = useState("José Muñoz Peña");
   const [signature, setSignature] = useState<Signature | null>(null);
   const [rejection, setRejection] = useState<string | null>(null);
+  const [gate, setGate] = useState<"comprobando" | "conectado" | "sin servicio">("comprobando");
   const tokens = PRESETS[preset];
+
+  // Sonda de salud: si el servicio no está, el campo se comporta como antes (sin
+  // verificación) y el arnés lo dice en pantalla.
+  useEffect(() => {
+    let vigente = true;
+    fetch(`${GATE_URL}/salud`)
+      .then((res) => res.ok)
+      .then((ok) => vigente && setGate(ok ? "conectado" : "sin servicio"))
+      .catch(() => vigente && setGate("sin servicio"));
+    return () => {
+      vigente = false;
+    };
+  }, []);
+
+  const verifier = useMemo(
+    () => ({
+      verify: async (imagen: Bitmap): Promise<Verdict> => {
+        const res = await fetch(
+          `${GATE_URL}/verificar?w=${imagen.width}&h=${imagen.height}`,
+          // Copia con su propio ArrayBuffer: `Uint8Array<ArrayBufferLike>` no es
+          // un `BodyInit` válido en TypeScript.
+          { method: "POST", body: new Uint8Array(imagen.data) }
+        );
+        if (!res.ok) throw new Error("el gate no respondió");
+        return (await res.json()) as Verdict;
+      },
+    }),
+    []
+  );
 
   const url = useMemo(
     () => (signature ? URL.createObjectURL(toPngBlob(signature)) : null),
@@ -61,6 +95,30 @@ export function App() {
         </h1>
         <p style={{ color: "var(--muted)", margin: "6px 0 0" }}>
           Banco de pruebas: los cuatro modos, con las fuentes reales.
+        </p>
+        <p
+          style={{ color: "var(--muted)", fontSize: 13, margin: "8px 0 0" }}
+          aria-live="polite"
+        >
+          <span
+            aria-hidden="true"
+            style={{
+              background:
+                gate === "conectado"
+                  ? "var(--accent)"
+                  : gate === "sin servicio"
+                    ? "var(--rule)"
+                    : "var(--muted)",
+              display: "inline-block",
+              height: 8,
+              marginRight: 8,
+              width: 8,
+            }}
+          />
+          Verificación visual: {gate}
+          {gate === "sin servicio"
+            ? " (arranca `pnpm --filter @firma-kit/eval serve`)"
+            : ""}
         </p>
       </header>
 
@@ -134,6 +192,7 @@ export function App() {
         }
         name={name}
         locale="es"
+        {...(gate === "conectado" ? { verifier } : {})}
         {...(theme === "auto" ? {} : { theme })}
         onSignature={(next) => {
           setSignature(next);
