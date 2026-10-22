@@ -2,7 +2,22 @@
 
 Rama `feat/fase-4`. Objetivo: cerrar la última fase del producto según
 `docs/PRODUCT.md` y los ADR vigentes. Documento de especificación: leer hasta
-`## Log`.
+`## Estado
+
+- T1 hecho — `d0ca969`: `apps/demo` con `/` y `/integration`, verificado con
+  `tsc --noEmit`, `next build` (2 rutas prerenderizadas), `pnpm test` (194 + 1
+  saltado) y `type-check` 9/9.
+- T2 hecho — `49a30db` (metadatos) y `f13d9d5` (`changesets`, scripts
+  `changeset`/`version-packages` y el README de `core` que faltaba en el tarball).
+  Comprobado con `changeset status` y `pack --dry-run` de los tres paquetes.
+- T3 hecho, con Prisma primero por decisión del dueño: `examples/prisma`. No entra
+  en el workspace ni en CI (no se instala `prisma`, para no arrastrar su postinstall
+  a la matriz). Verificado solo lo que no necesita Prisma: `detectFormat` reconoce
+  el PNG por sus bytes mágicos y el IHDR da las medidas reales; el esquema y el
+  handler quedan como ejemplo a copiar.
+- T4 pendiente.
+
+## Log`.
 
 ## Specs
 
@@ -39,6 +54,21 @@ Rama `feat/fase-4`. Objetivo: cerrar la última fase del producto según
   y si cada uno es un paquete o un ejemplo.
 - **T4** — Cerrar la deuda de i18n: `docs/DECISIONS.md` es el único documento que
   sigue solo en español.
+
+## Estado
+
+- T1 hecho — `d0ca969`: `apps/demo` con `/` y `/integration`, verificado con
+  `tsc --noEmit`, `next build` (2 rutas prerenderizadas), `pnpm test` (194 + 1
+  saltado) y `type-check` 9/9.
+- T2 hecho — `49a30db` (metadatos) y `f13d9d5` (`changesets`, scripts
+  `changeset`/`version-packages` y el README de `core` que faltaba en el tarball).
+  Comprobado con `changeset status` y `pack --dry-run` de los tres paquetes.
+- T3 hecho, con Prisma primero por decisión del dueño: `examples/prisma`. No entra
+  en el workspace ni en CI (no se instala `prisma`, para no arrastrar su postinstall
+  a la matriz). Verificado solo lo que no necesita Prisma: `detectFormat` reconoce
+  el PNG por sus bytes mágicos y el IHDR da las medidas reales; el esquema y el
+  handler quedan como ejemplo a copiar.
+- T4 pendiente.
 
 ## Log
 
