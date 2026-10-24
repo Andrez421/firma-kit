@@ -28,6 +28,7 @@ const ACTION_LABEL: Record<ToolbarAction, { en: string; es: string }> = {
   redo: { en: "Redo", es: "Rehacer" },
   erase: { en: "Erase", es: "Borrar" },
   fullscreen: { en: "Full screen", es: "Pantalla completa" },
+  link: { en: "Join strokes", es: "Unir trazos" },
   clear: { en: "Clear", es: "Limpiar" },
   confirm: { en: "Confirm", es: "Confirmar" },
 };

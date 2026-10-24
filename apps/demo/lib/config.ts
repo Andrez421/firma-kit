@@ -12,6 +12,7 @@ export const ALL_ACTIONS: ToolbarAction[] = [
   "redo",
   "erase",
   "fullscreen",
+  "link",
   "clear",
   "confirm",
 ];

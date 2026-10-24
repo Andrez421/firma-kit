@@ -252,6 +252,9 @@ export default function Page() {
             style={preset.vars as React.CSSProperties}
             {...(gate === "on" ? { verifier } : {})}
             onFontChange={(fuente) => setConfig((actual) => ({ ...actual, font: fuente }))}
+            onStrokeLinkChange={(valor) =>
+              setConfig((actual) => ({ ...actual, strokeLink: valor }))
+            }
             onSignature={(next) => {
               setSignature(next);
               setRejection(null);

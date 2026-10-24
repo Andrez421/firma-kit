@@ -26,7 +26,9 @@ function imagen(w = 320, h = 240): Bitmap {
 describe("createZeroShotGate", () => {
   it("pregunta por la firma primero y por cinco clases más después", () => {
     expect(SIGNATURE_PROMPTS[0]).toMatch(/signature/);
-    expect(SIGNATURE_PROMPTS).toHaveLength(6);
+    // Diez clases: las seis originales más cuatro de interfaz que impiden que una
+    // captura de pantalla del propio campo pase por firma.
+    expect(SIGNATURE_PROMPTS).toHaveLength(10);
   });
 
   // Sin los pesos no hay nada que medir: el test se salta en vez de fingir. En CI
@@ -41,4 +43,19 @@ describe("createZeroShotGate", () => {
     },
     120_000
   );
+});
+
+describe("clases del gate", () => {
+  it("la primera clase es la firma: es la que decide la puntuación", () => {
+    expect(SIGNATURE_PROMPTS[0]).toBe("a handwritten signature on paper");
+  });
+
+  it("incluye clases de interfaz, no solo «una captura de pantalla»", () => {
+    // La captura del propio campo se colaba como firma con la clase genérica; estas
+    // la bajan de 1.00 a 0.23 según la medición del corpus.
+    expect(SIGNATURE_PROMPTS.some((p) => p.includes("buttons and tabs"))).toBe(true);
+    expect(SIGNATURE_PROMPTS.some((p) => p.includes("user interface"))).toBe(true);
+    expect(SIGNATURE_PROMPTS.some((p) => p.includes("screen capture"))).toBe(true);
+    expect(SIGNATURE_PROMPTS.some((p) => p.includes("signature box"))).toBe(true);
+  });
 });

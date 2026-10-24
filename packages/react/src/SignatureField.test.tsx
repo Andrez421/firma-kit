@@ -307,7 +307,7 @@ describe("<SignatureField />", () => {
 
   it("offers full screen and marks the tools it toggles", () => {
     const { container } = render(<SignatureField />);
-    const pantalla = screen.getByRole("button", { name: "Full screen" });
+    const pantalla = screen.getByRole("button", { name: "Fullscreen" });
     expect(pantalla.getAttribute("aria-pressed")).toBe("false");
     fireEvent.click(pantalla);
     expect(pantalla.getAttribute("aria-pressed")).toBe("true");
@@ -315,7 +315,7 @@ describe("<SignatureField />", () => {
       container.querySelector(".signature__canvas-wrap--expanded")
     ).not.toBeNull();
     // La salida vive dentro del overlay, donde el pulgar la alcanza.
-    fireEvent.click(screen.getByRole("button", { name: "Exit full screen" }));
+    fireEvent.click(screen.getByRole("button", { name: "Exit fullscreen" }));
     expect(container.querySelector(".signature__canvas-wrap--expanded")).toBeNull();
     expect(pantalla.getAttribute("aria-pressed")).toBe("false");
   });
@@ -676,7 +676,7 @@ describe("barra de acciones", () => {
       "Undo",
       "Redo",
       "Erase",
-      "Full screen",
+      "Fullscreen",
       "Clear",
       "Use this signature",
     ]);
@@ -718,5 +718,42 @@ describe("modo escribir y cámara", () => {
     render(<SignatureField name="María" modes={["type"]} />);
     expect(screen.getByLabelText("Handwriting style")).toBeDefined();
     expect(screen.getAllByRole("radio").length).toBeGreaterThanOrEqual(4);
+  });
+});
+
+describe("interruptor de trazos en la barra", () => {
+  it("no aparece si no se pide, y aparece cuando se pide", () => {
+    const { unmount } = render(<SignatureField />);
+    expect(screen.queryByRole("checkbox", { name: "Join" })).toBeNull();
+    unmount();
+
+    render(<SignatureField toolbar={["link", "confirm"]} />);
+    expect(screen.getByRole("checkbox", { name: "Join" })).toBeDefined();
+  });
+
+  it("avisa al padre y responde al instante", () => {
+    const cambios: boolean[] = [];
+    render(
+      <SignatureField toolbar={["link"]} onStrokeLinkChange={(valor) => cambios.push(valor)} />
+    );
+    const casilla = screen.getByRole("checkbox", { name: "Join" }) as HTMLInputElement;
+    expect(casilla.checked).toBe(false);
+
+    fireEvent.click(casilla);
+    expect(cambios).toEqual([true]);
+    expect(casilla.checked).toBe(true);
+  });
+
+  it("sigue a la prop cuando el padre la cambia", () => {
+    const { rerender } = render(<SignatureField toolbar={["link"]} strokeLink={false} />);
+    const casilla = () => screen.getByRole("checkbox", { name: "Join" }) as HTMLInputElement;
+    expect(casilla().checked).toBe(false);
+    rerender(<SignatureField toolbar={["link"]} strokeLink />);
+    expect(casilla().checked).toBe(true);
+  });
+
+  it("traduce la etiqueta al español", () => {
+    render(<SignatureField toolbar={["link"]} locale="es" />);
+    expect(screen.getByRole("checkbox", { name: "Unir" })).toBeDefined();
   });
 });

@@ -466,11 +466,47 @@
   text-align: center;
 }
 
+.signature__toggle {
+  align-items: center;
+  border: 1px solid var(--signature-rule);
+  border-radius: var(--signature-radius);
+  cursor: pointer;
+  display: inline-flex;
+  font-size: 0.95rem;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 13px;
+  user-select: none;
+}
+
+.signature__toggle:hover {
+  border-color: var(--signature-color);
+}
+
+.signature__toggle--active {
+  border-color: var(--signature-focus);
+  color: var(--signature-focus);
+}
+
+.signature__toggle input {
+  accent-color: var(--signature-focus);
+  height: 16px;
+  margin: 0;
+  width: 16px;
+}
+
+.signature__toggle:focus-within {
+  outline: 2px solid var(--signature-focus);
+  outline-offset: 2px;
+}
+
 .signature__actions {
   align-items: center;
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  /* Seis, no diez: con el interruptor de trazos la fila tiene siete controles y así
+     entran todos en una línea sin encoger el texto de nadie. */
+  gap: 6px;
 }
 
 .signature__button {
@@ -482,7 +518,9 @@
   font: inherit;
   min-height: 44px;
   min-width: 44px;
-  padding: 11px 16px;
+  /* Un poco más ajustado que antes: con el interruptor de trazos la fila tiene un
+     control más y así siguen alineados sin romper a dos líneas. */
+  padding: 10px 11px;
   transition:
     border-color var(--signature-press),
     transform var(--signature-press);
