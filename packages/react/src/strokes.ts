@@ -24,4 +24,8 @@ export function startStroke(
 /** Orden de siempre de la barra, el que se pinta si no se pide otro. */
 export const TOOLBAR_DEFAULT = ["undo", "redo", "erase", "fullscreen", "clear", "confirm"] as const;
 
-export type ToolbarAction = (typeof TOOLBAR_DEFAULT)[number];
+/**
+ * `link` es un interruptor, no un botón: enciende y apaga el enlace de trazos. Va
+ * aparte del orden por defecto para no cambiar la barra de quien ya la usa.
+ */
+export type ToolbarAction = (typeof TOOLBAR_DEFAULT)[number] | "link";

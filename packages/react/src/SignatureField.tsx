@@ -79,6 +79,8 @@ type FieldText = {
   upload: string;
   camera: string;
   cameraHint: string;
+  linkLabel: string;
+  linkHint: string;
   clear: string;
   confirm: string;
   busy: string;
@@ -96,13 +98,15 @@ const FIELD_TEXT: Record<Locale, FieldText> = {
     upload: "Upload an image of the signature",
     camera: "Open camera",
     cameraHint: "On a phone this opens the camera; on a desktop it asks for a file.",
+    linkLabel: "Join",
+    linkHint: "Each new stroke starts where the previous one ended, joined by a line.",
     clear: "Clear",
     confirm: "Use this signature",
     undo: "Undo",
     redo: "Redo",
     erase: "Erase",
-    fullscreen: "Full screen",
-    exitFullscreen: "Exit full screen",
+    fullscreen: "Fullscreen",
+    exitFullscreen: "Exit fullscreen",
     baseline: "Sign on the line",
     hint: "Sign here with your finger or pointer",
     filePreviewAlt: "The image you selected",
@@ -120,6 +124,8 @@ const FIELD_TEXT: Record<Locale, FieldText> = {
     upload: "Subir imagen de la firma",
     camera: "Abrir cámara",
     cameraHint: "En el móvil abre la cámara; en escritorio pide un archivo.",
+    linkLabel: "Unir",
+    linkHint: "Cada trazo nuevo empieza donde terminó el anterior, unido por una línea.",
     clear: "Limpiar",
     confirm: "Usar esta firma",
     undo: "Deshacer",
@@ -210,6 +216,11 @@ export type SignatureFieldProps = {
    */
   strokeLink?: boolean;
   /**
+   * Se dispara al pulsar el interruptor de la barra. Sin él, el interruptor sigue
+   * funcionando por dentro, pero el padre no se entera del cambio.
+   */
+  onStrokeLinkChange?: (value: boolean) => void;
+  /**
    * Tamaño del campo: cambia el lienzo y el aire, nunca los objetivos táctiles,
    * que siguen en 44px como mínimo.
    */
@@ -296,6 +307,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
       theme,
       toolbar,
       strokeLink = false,
+      onStrokeLinkChange,
       fonts = [...TYPE_FONTS],
       font,
       onFontChange,
@@ -330,6 +342,13 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
     // La cursiva elegida: controlada por el padre si pasa `font`, si no interna.
     const [chosenFont, setChosenFont] = useState<TypeFont>(font ?? fonts[0] ?? "Caveat");
     const activeFont = font ?? chosenFont;
+    // El interruptor de la barra manda mientras el padre no diga otra cosa: la prop
+    // sincroniza, y el clic local responde al instante.
+    const [enlazando, setEnlazando] = useState(strokeLink);
+    useEffect(() => {
+      setEnlazando(strokeLink);
+    }, [strokeLink]);
+
     // Tamaño del recuadro de escribir. Se ajusta arrastrando las esquinas y el texto se
     // recoloca solo: el layout busca el tamaño de letra que cabe en esa caja.
     const [typeSize, setTypeSize] = useState({ width: CANVAS_SIZE.width, height: 120 });
@@ -890,7 +909,7 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
                 }
                 // Un trazo nuevo invalida lo que se podía rehacer.
                 setUndone([]);
-                setStrokes((previos) => startStroke(previos, p, strokeLink));
+                setStrokes((previos) => startStroke(previos, p, enlazando));
               }}
               onPointerMove={(event) => {
                 if (!drawing.current || erasing) return;
@@ -1080,6 +1099,30 @@ export const SignatureField = forwardRef<SignatureFieldHandle, SignatureFieldPro
                   >
                     {texts.fullscreen}
                   </button>
+                ) : null;
+              }
+              if (accion === "link") {
+                return mode === "draw" ? (
+                  <label
+                    key={accion}
+                    className={
+                      enlazando
+                        ? "signature__toggle signature__toggle--active"
+                        : "signature__toggle"
+                    }
+                    title={texts.linkHint}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={enlazando}
+                      onChange={(evento) => {
+                        const siguiente = evento.target.checked;
+                        setEnlazando(siguiente);
+                        onStrokeLinkChange?.(siguiente);
+                      }}
+                    />
+                    {texts.linkLabel}
+                  </label>
                 ) : null;
               }
               if (accion === "clear") {
