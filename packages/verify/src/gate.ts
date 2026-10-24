@@ -27,6 +27,15 @@ export const SIGNATURE_PROMPTS = [
   "a photo of an object",
   "a screenshot of a screen",
   "a person",
+  // «Una captura de pantalla» a secas no bastaba: la captura del propio campo, con
+  // sus pestañas, botones y textos, ganaba la comparación con puntuación 1.00. Con
+  // estas cuatro clases baja a 0.23 y se rechaza. Medido sobre el corpus: firmas
+  // reales 4/4 aceptadas en los dos casos, falsos aceptados 14.7 % -> 13.2 %
+  // (19 -> 17 de 129). El detalle está en el PR #36.
+  "a screenshot of a website with buttons and tabs",
+  "a user interface with buttons and text",
+  "a screen capture showing an application with buttons, tabs and labels",
+  "a web form with a signature box and buttons",
 ] as const;
 
 /** Carpeta del modelo dentro del volumen de modelos. */
