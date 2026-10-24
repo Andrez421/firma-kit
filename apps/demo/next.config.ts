@@ -10,6 +10,13 @@ import type { NextConfig } from "next";
 const config: NextConfig = {
   transpilePackages: ["@firma-kit/react", "@firma-kit/core"],
   reactStrictMode: true,
+  // Next 15 avisa cuando el navegador pide `_next/*` desde otro origen (probar desde
+  // el móvil por la tailnet). La lista va por entorno para no clavar una IP en el
+  // repositorio; sin la variable, no se permite ninguno.
+  allowedDevOrigins: (process.env.NEXT_DEV_ALLOWED_ORIGINS ?? "")
+    .split(",")
+    .map((origen) => origen.trim())
+    .filter(Boolean),
   webpack: (webpackConfig) => {
     webpackConfig.resolve.extensionAlias = {
       ...webpackConfig.resolve.extensionAlias,
